@@ -1,0 +1,1437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Primordial Soup - Life Simulation</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@300;400;500&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #0a0a0f;
+            font-family: 'Rajdhani', sans-serif;
+            color: #c0e0d0;
+            overflow: hidden;
+            min-height: 100vh;
+        }
+
+        .container {
+            display: flex;
+            height: 100vh;
+        }
+
+        /* Main simulation area */
+        .simulation-area {
+            flex: 1;
+            position: relative;
+            background: radial-gradient(ellipse at center, #0d1a15 0%, #060a08 70%, #020303 100%);
+        }
+
+        #canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        /* Ambient particles overlay */
+        .ambient-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            pointer-events: none;
+            background-image: 
+                radial-gradient(1px 1px at 20% 30%, rgba(100, 200, 150, 0.15), transparent),
+                radial-gradient(1px 1px at 40% 70%, rgba(80, 180, 120, 0.1), transparent),
+                radial-gradient(1px 1px at 60% 20%, rgba(120, 220, 180, 0.12), transparent),
+                radial-gradient(1px 1px at 80% 60%, rgba(90, 190, 140, 0.08), transparent);
+            background-size: 200px 200px, 150px 150px, 180px 180px, 160px 160px;
+            animation: drift 60s linear infinite;
+        }
+
+        @keyframes drift {
+            0% { background-position: 0 0, 0 0, 0 0, 0 0; }
+            100% { background-position: 200px 100px, -150px 75px, 180px -90px, -160px 80px; }
+        }
+
+        /* Side panel */
+        .side-panel {
+            width: 320px;
+            background: linear-gradient(180deg, #0c1210 0%, #080d0b 100%);
+            border-left: 1px solid rgba(100, 200, 150, 0.2);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            overflow-y: auto;
+        }
+
+        .panel-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 18px;
+            color: #40e0a0;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid rgba(100, 200, 150, 0.3);
+            text-shadow: 0 0 20px rgba(64, 224, 160, 0.5);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .stat-box {
+            background: rgba(20, 40, 30, 0.6);
+            border: 1px solid rgba(100, 200, 150, 0.15);
+            border-radius: 8px;
+            padding: 12px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 24px;
+            color: #60ffc0;
+            text-shadow: 0 0 10px rgba(96, 255, 192, 0.4);
+        }
+
+        .stat-label {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: rgba(192, 224, 208, 0.6);
+            margin-top: 4px;
+        }
+
+        .section {
+            background: rgba(15, 30, 22, 0.5);
+            border: 1px solid rgba(100, 200, 150, 0.1);
+            border-radius: 10px;
+            padding: 16px;
+        }
+
+        .section-title {
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: rgba(192, 224, 208, 0.8);
+            margin-bottom: 12px;
+        }
+
+        .food-bar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .food-icon {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+        }
+
+        .food-icon.oxygen { background: rgba(100, 180, 255, 0.3); border: 1px solid rgba(100, 180, 255, 0.6); }
+        .food-icon.glucose { background: rgba(255, 200, 100, 0.3); border: 1px solid rgba(255, 200, 100, 0.6); }
+        .food-icon.amino { background: rgba(255, 100, 180, 0.3); border: 1px solid rgba(255, 100, 180, 0.6); }
+
+        .food-bar-track {
+            flex: 1;
+            height: 8px;
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .food-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.3s;
+        }
+
+        .food-bar-fill.oxygen { background: linear-gradient(90deg, #4080ff, #80c0ff); }
+        .food-bar-fill.glucose { background: linear-gradient(90deg, #ffc040, #ffe080); }
+        .food-bar-fill.amino { background: linear-gradient(90deg, #ff60b0, #ff90d0); }
+
+        .food-count {
+            width: 40px;
+            text-align: right;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 12px;
+        }
+
+        /* Controls */
+        .controls {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .btn {
+            background: linear-gradient(180deg, rgba(64, 224, 160, 0.2) 0%, rgba(64, 224, 160, 0.05) 100%);
+            border: 1px solid rgba(64, 224, 160, 0.4);
+            color: #40e0a0;
+            padding: 12px 16px;
+            border-radius: 6px;
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 14px;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn:hover {
+            background: linear-gradient(180deg, rgba(64, 224, 160, 0.3) 0%, rgba(64, 224, 160, 0.1) 100%);
+            box-shadow: 0 0 20px rgba(64, 224, 160, 0.2);
+        }
+
+        .btn.danger {
+            border-color: rgba(255, 100, 100, 0.4);
+            color: #ff8080;
+        }
+
+        .btn.danger:hover {
+            background: linear-gradient(180deg, rgba(255, 100, 100, 0.3) 0%, rgba(255, 100, 100, 0.1) 100%);
+        }
+
+        /* Slider controls */
+        .slider-group {
+            margin-bottom: 12px;
+        }
+
+        .slider-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            margin-bottom: 6px;
+            color: rgba(192, 224, 208, 0.7);
+        }
+
+        .slider-value {
+            font-family: 'Orbitron', sans-serif;
+            color: #60ffc0;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 6px;
+            -webkit-appearance: none;
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 3px;
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            background: #40e0a0;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(64, 224, 160, 0.5);
+        }
+
+        /* Selected organism info */
+        .organism-info {
+            display: none;
+        }
+
+        .organism-info.active {
+            display: block;
+        }
+
+        .dna-display {
+            display: flex;
+            gap: 4px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+
+        .chromosome {
+            flex: 1;
+            min-width: 50px;
+            height: 30px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            font-family: 'Orbitron', sans-serif;
+        }
+
+        .trait-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .trait-item {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            padding: 6px 10px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 4px;
+        }
+
+        .trait-name {
+            color: rgba(192, 224, 208, 0.7);
+        }
+
+        .trait-value {
+            font-family: 'Orbitron', sans-serif;
+            color: #60ffc0;
+        }
+
+        /* Generation history */
+        .generation-bar {
+            height: 60px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 6px;
+            margin-top: 10px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Legend */
+        .legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 11px;
+        }
+
+        .legend-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+
+        /* Time display */
+        .time-display {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 12px;
+            color: rgba(192, 224, 208, 0.5);
+            text-align: center;
+            padding: 10px;
+            border-top: 1px solid rgba(100, 200, 150, 0.1);
+            margin-top: auto;
+        }
+
+        /* Tooltips */
+        .tooltip {
+            position: absolute;
+            background: rgba(10, 20, 15, 0.95);
+            border: 1px solid rgba(100, 200, 150, 0.3);
+            border-radius: 8px;
+            padding: 12px;
+            pointer-events: none;
+            z-index: 1000;
+            max-width: 250px;
+            display: none;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+        }
+
+        .tooltip.visible {
+            display: block;
+        }
+
+        /* Speed indicator */
+        .speed-indicator {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 8px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 6px;
+            margin-top: 10px;
+        }
+
+        .speed-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            border: 1px solid rgba(100, 200, 150, 0.3);
+            background: transparent;
+            color: #40e0a0;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            transition: all 0.2s;
+        }
+
+        .speed-btn:hover {
+            background: rgba(64, 224, 160, 0.2);
+        }
+
+        .speed-btn.active {
+            background: rgba(64, 224, 160, 0.3);
+            border-color: #40e0a0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="simulation-area">
+            <canvas id="canvas"></canvas>
+            <div class="ambient-overlay"></div>
+            <div class="tooltip" id="tooltip"></div>
+        </div>
+        
+        <div class="side-panel">
+            <h1 class="panel-title">Primordial Soup</h1>
+            
+            <div class="stats-grid">
+                <div class="stat-box">
+                    <div class="stat-value" id="population">0</div>
+                    <div class="stat-label">Organisms</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value" id="generation">1</div>
+                    <div class="stat-label">Generation</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value" id="births">0</div>
+                    <div class="stat-label">Births</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value" id="deaths">0</div>
+                    <div class="stat-label">Deaths</div>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-title">Food Supply</div>
+                <div class="food-bar">
+                    <div class="food-icon oxygen">O₂</div>
+                    <div class="food-bar-track">
+                        <div class="food-bar-fill oxygen" id="oxygenBar" style="width: 100%"></div>
+                    </div>
+                    <div class="food-count" id="oxygenCount">0</div>
+                </div>
+                <div class="food-bar">
+                    <div class="food-icon glucose">G</div>
+                    <div class="food-bar-track">
+                        <div class="food-bar-fill glucose" id="glucoseBar" style="width: 50%"></div>
+                    </div>
+                    <div class="food-count" id="glucoseCount">0</div>
+                </div>
+                <div class="food-bar">
+                    <div class="food-icon amino">A</div>
+                    <div class="food-bar-track">
+                        <div class="food-bar-fill amino" id="aminoBar" style="width: 20%"></div>
+                    </div>
+                    <div class="food-count" id="aminoCount">0</div>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-title">Simulation Settings</div>
+                <div class="slider-group">
+                    <div class="slider-label">
+                        <span>Food Spawn Rate</span>
+                        <span class="slider-value" id="foodRateValue">1.0x</span>
+                    </div>
+                    <input type="range" id="foodRate" min="0.1" max="3" step="0.1" value="1">
+                </div>
+                <div class="slider-group">
+                    <div class="slider-label">
+                        <span>Mutation Rate</span>
+                        <span class="slider-value" id="mutationRateValue">5%</span>
+                    </div>
+                    <input type="range" id="mutationRate" min="1" max="20" step="1" value="5">
+                </div>
+                
+                <div class="speed-indicator">
+                    <button class="speed-btn" id="pauseBtn">⏸</button>
+                    <button class="speed-btn active" id="speed1">1x</button>
+                    <button class="speed-btn" id="speed2">2x</button>
+                    <button class="speed-btn" id="speed3">4x</button>
+                </div>
+            </div>
+
+            <div class="section organism-info" id="organismInfo">
+                <div class="section-title">Selected Organism</div>
+                <div class="dna-display" id="dnaDisplay"></div>
+                <div class="trait-list" id="traitList"></div>
+            </div>
+
+            <div class="section">
+                <div class="section-title">Species Distribution</div>
+                <div class="generation-bar" id="speciesBar"></div>
+                <div class="legend" id="speciesLegend"></div>
+            </div>
+
+            <div class="controls">
+                <button class="btn" id="addOrganisms">+ Add 10 Organisms</button>
+                <button class="btn" id="addFood">+ Add Food Burst</button>
+                <button class="btn danger" id="reset">Reset Simulation</button>
+            </div>
+
+            <div class="time-display">
+                Time: <span id="timeElapsed">0:00</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ============================================
+        // PRIMORDIAL SOUP - BIOLOGY SIMULATION
+        // ============================================
+
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+
+        // Resize canvas
+        function resizeCanvas() {
+            canvas.width = canvas.offsetWidth;
+            canvas.height = canvas.offsetHeight;
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        // ============================================
+        // DNA & GENETICS SYSTEM
+        // ============================================
+
+        // DNA Structure: 5 chromosomes, each with gene values
+        // Gene values are 0-255, mapped to traits
+
+        const CHROMOSOME_FUNCTIONS = {
+            0: 'physical',      // Size, membrane, shape
+            1: 'movement',      // Movement type, speed
+            2: 'metabolism',    // What they eat, efficiency  
+            3: 'reproduction',  // Rate, mutation tendency
+            4: 'sensory'        // Detection range, behavior
+        };
+
+        const MOVEMENT_TYPES = ['none', 'cilia', 'flagellum', 'pseudopod'];
+        const METABOLISM_TYPES = ['oxygen', 'glucose', 'amino', 'dual'];
+
+        class DNA {
+            constructor(chromosomes = null) {
+                if (chromosomes) {
+                    this.chromosomes = chromosomes.map(c => [...c]);
+                } else {
+                    // Initialize random DNA
+                    this.chromosomes = [];
+                    for (let i = 0; i < 5; i++) {
+                        const genes = [];
+                        for (let j = 0; j < 100; j++) {
+                            genes.push(Math.floor(Math.random() * 256));
+                        }
+                        this.chromosomes.push(genes);
+                    }
+                }
+            }
+
+            // Get average value of a gene range
+            getGeneRange(chromosome, start, end) {
+                const genes = this.chromosomes[chromosome].slice(start, end);
+                return genes.reduce((a, b) => a + b, 0) / genes.length;
+            }
+
+            // Decode traits from DNA
+            decodeTraits() {
+                return {
+                    // Physical (Chromosome 0)
+                    size: this.mapRange(this.getGeneRange(0, 0, 20), 0, 255, 8, 25),
+                    membraneThickness: this.mapRange(this.getGeneRange(0, 20, 40), 0, 255, 0.5, 3),
+                    elasticity: this.mapRange(this.getGeneRange(0, 40, 60), 0, 255, 0.3, 1),
+                    
+                    // Movement (Chromosome 1)
+                    movementType: MOVEMENT_TYPES[Math.floor(this.getGeneRange(1, 0, 25) / 64)],
+                    baseSpeed: this.mapRange(this.getGeneRange(1, 25, 50), 0, 255, 0.2, 2),
+                    turnRate: this.mapRange(this.getGeneRange(1, 50, 75), 0, 255, 0.02, 0.15),
+                    movementEfficiency: this.mapRange(this.getGeneRange(1, 75, 100), 0, 255, 0.5, 1.5),
+                    
+                    // Metabolism (Chromosome 2)
+                    primaryFood: this.getPrimaryFood(),
+                    canEatOxygen: this.getGeneRange(2, 0, 25) > 100,
+                    canEatGlucose: this.getGeneRange(2, 25, 50) > 128,
+                    canEatAmino: this.getGeneRange(2, 50, 75) > 180,
+                    metabolicRate: this.mapRange(this.getGeneRange(2, 75, 100), 0, 255, 0.3, 1.2),
+                    
+                    // Reproduction (Chromosome 3)
+                    reproductionThreshold: this.mapRange(this.getGeneRange(3, 0, 33), 0, 255, 60, 150),
+                    offspringEnergy: this.mapRange(this.getGeneRange(3, 33, 66), 0, 255, 0.3, 0.5),
+                    mutationTendency: this.mapRange(this.getGeneRange(3, 66, 100), 0, 255, 0.01, 0.15),
+                    
+                    // Sensory (Chromosome 4)
+                    sensorRange: this.mapRange(this.getGeneRange(4, 0, 33), 0, 255, 30, 120),
+                    foodPreference: this.mapRange(this.getGeneRange(4, 33, 66), 0, 255, 0, 1),
+                    flockingTendency: this.mapRange(this.getGeneRange(4, 66, 100), 0, 255, 0, 0.5),
+
+                    // Computed color from DNA
+                    color: this.computeColor()
+                };
+            }
+
+            getPrimaryFood() {
+                const o = this.getGeneRange(2, 0, 25);
+                const g = this.getGeneRange(2, 25, 50);
+                const a = this.getGeneRange(2, 50, 75);
+                
+                if (o >= g && o >= a) return 'oxygen';
+                if (g >= o && g >= a) return 'glucose';
+                return 'amino';
+            }
+
+            computeColor() {
+                // Color is derived from metabolism genes - creates visual species
+                const r = Math.floor(this.getGeneRange(2, 0, 33));
+                const g = Math.floor(this.getGeneRange(2, 33, 66));
+                const b = Math.floor(this.getGeneRange(2, 66, 100));
+                
+                // Normalize to brighter colors
+                const max = Math.max(r, g, b, 1);
+                const factor = 200 / max;
+                
+                return {
+                    r: Math.min(255, Math.floor(r * factor) + 55),
+                    g: Math.min(255, Math.floor(g * factor) + 55),
+                    b: Math.min(255, Math.floor(b * factor) + 55)
+                };
+            }
+
+            mapRange(value, inMin, inMax, outMin, outMax) {
+                return outMin + (value - inMin) * (outMax - outMin) / (inMax - inMin);
+            }
+
+            // Reproduce with mutation
+            reproduce(mutationRate) {
+                const newChromosomes = this.chromosomes.map(chromosome => {
+                    return chromosome.map(gene => {
+                        if (Math.random() < mutationRate) {
+                            // Mutation: small change
+                            const change = Math.floor(Math.random() * 30) - 15;
+                            return Math.max(0, Math.min(255, gene + change));
+                        }
+                        return gene;
+                    });
+                });
+                return new DNA(newChromosomes);
+            }
+
+            // Get species signature (for grouping similar organisms)
+            getSpeciesSignature() {
+                // Use metabolism genes as species identifier
+                const sig = [];
+                for (let i = 0; i < 5; i++) {
+                    sig.push(Math.floor(this.chromosomes[2][i * 20] / 64));
+                }
+                return sig.join('-');
+            }
+        }
+
+        // ============================================
+        // ORGANISM CLASS
+        // ============================================
+
+        class Organism {
+            constructor(x, y, dna = null) {
+                this.id = Math.random().toString(36).substr(2, 9);
+                this.x = x;
+                this.y = y;
+                this.dna = dna || new DNA();
+                this.traits = this.dna.decodeTraits();
+                
+                this.energy = 50 + Math.random() * 30;
+                this.age = 0;
+                this.generation = 1;
+                
+                this.vx = (Math.random() - 0.5) * 2;
+                this.vy = (Math.random() - 0.5) * 2;
+                this.targetAngle = Math.random() * Math.PI * 2;
+                
+                this.size = this.traits.size;
+                this.pulsePhase = Math.random() * Math.PI * 2;
+                
+                this.selected = false;
+                this.dead = false;
+            }
+
+            update(deltaTime, foods, organisms) {
+                if (this.dead) return;
+                
+                this.age += deltaTime;
+                this.pulsePhase += deltaTime * 3;
+                
+                // Energy consumption based on size and movement
+                let energyCost = 0.02 * this.traits.metabolicRate * (this.size / 15);
+                
+                // Movement
+                if (this.traits.movementType !== 'none') {
+                    this.move(foods, organisms);
+                    energyCost += 0.01 * this.traits.baseSpeed;
+                } else {
+                    // Passive drift
+                    this.x += (Math.random() - 0.5) * 0.3;
+                    this.y += (Math.random() - 0.5) * 0.3;
+                }
+                
+                this.energy -= energyCost;
+                
+                // Boundary wrapping
+                if (this.x < -this.size) this.x = canvas.width + this.size;
+                if (this.x > canvas.width + this.size) this.x = -this.size;
+                if (this.y < -this.size) this.y = canvas.height + this.size;
+                if (this.y > canvas.height + this.size) this.y = -this.size;
+                
+                // Death check
+                if (this.energy <= 0) {
+                    this.dead = true;
+                    stats.deaths++;
+                }
+            }
+
+            move(foods, organisms) {
+                // Find nearest food
+                let nearestFood = null;
+                let nearestDist = this.traits.sensorRange;
+                
+                for (const food of foods) {
+                    if (!this.canEat(food.type)) continue;
+                    
+                    const dist = this.distanceTo(food);
+                    if (dist < nearestDist) {
+                        nearestDist = dist;
+                        nearestFood = food;
+                    }
+                }
+                
+                // Move towards food or wander
+                if (nearestFood) {
+                    const dx = nearestFood.x - this.x;
+                    const dy = nearestFood.y - this.y;
+                    this.targetAngle = Math.atan2(dy, dx);
+                } else {
+                    // Random wandering with momentum
+                    if (Math.random() < 0.02) {
+                        this.targetAngle += (Math.random() - 0.5) * Math.PI;
+                    }
+                }
+                
+                // Smooth turning
+                const currentAngle = Math.atan2(this.vy, this.vx);
+                let angleDiff = this.targetAngle - currentAngle;
+                while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
+                while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
+                
+                const newAngle = currentAngle + angleDiff * this.traits.turnRate;
+                
+                // Apply movement based on type
+                let speed = this.traits.baseSpeed;
+                
+                if (this.traits.movementType === 'flagellum') {
+                    // Fast but less maneuverable
+                    speed *= 1.3;
+                } else if (this.traits.movementType === 'cilia') {
+                    // Smooth movement
+                    speed *= 1.0;
+                } else if (this.traits.movementType === 'pseudopod') {
+                    // Slow but efficient
+                    speed *= 0.7;
+                }
+                
+                this.vx = Math.cos(newAngle) * speed;
+                this.vy = Math.sin(newAngle) * speed;
+                
+                this.x += this.vx;
+                this.y += this.vy;
+            }
+
+            canEat(foodType) {
+                if (foodType === 'oxygen') return this.traits.canEatOxygen;
+                if (foodType === 'glucose') return this.traits.canEatGlucose;
+                if (foodType === 'amino') return this.traits.canEatAmino;
+                return false;
+            }
+
+            tryEat(food) {
+                if (!this.canEat(food.type)) return false;
+                
+                const dist = this.distanceTo(food);
+                if (dist < this.size + food.size) {
+                    // Energy gained depends on food type and metabolism
+                    let energyGain = food.energy;
+                    
+                    if (food.type === this.traits.primaryFood) {
+                        energyGain *= 1.5; // Bonus for primary food
+                    }
+                    
+                    energyGain *= this.traits.metabolicRate;
+                    this.energy += energyGain;
+                    
+                    return true;
+                }
+                return false;
+            }
+
+            canReproduce() {
+                return this.energy >= this.traits.reproductionThreshold;
+            }
+
+            reproduce(globalMutationRate) {
+                if (!this.canReproduce()) return null;
+                
+                const mutationRate = this.traits.mutationTendency * globalMutationRate;
+                const childDNA = this.dna.reproduce(mutationRate);
+                
+                // Split energy
+                const childEnergy = this.energy * this.traits.offspringEnergy;
+                this.energy -= childEnergy;
+                
+                // Spawn nearby
+                const angle = Math.random() * Math.PI * 2;
+                const dist = this.size * 2;
+                
+                const child = new Organism(
+                    this.x + Math.cos(angle) * dist,
+                    this.y + Math.sin(angle) * dist,
+                    childDNA
+                );
+                child.energy = childEnergy;
+                child.generation = this.generation + 1;
+                
+                stats.births++;
+                stats.maxGeneration = Math.max(stats.maxGeneration, child.generation);
+                
+                return child;
+            }
+
+            distanceTo(other) {
+                const dx = other.x - this.x;
+                const dy = other.y - this.y;
+                return Math.sqrt(dx * dx + dy * dy);
+            }
+
+            draw(ctx) {
+                const pulse = Math.sin(this.pulsePhase) * 0.1 + 1;
+                const drawSize = this.size * pulse;
+                const color = this.traits.color;
+                
+                // Glow effect
+                const gradient = ctx.createRadialGradient(
+                    this.x, this.y, 0,
+                    this.x, this.y, drawSize * 2
+                );
+                gradient.addColorStop(0, `rgba(${color.r}, ${color.g}, ${color.b}, 0.3)`);
+                gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+                
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, drawSize * 2, 0, Math.PI * 2);
+                ctx.fillStyle = gradient;
+                ctx.fill();
+                
+                // Cell body
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, drawSize, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(${color.r}, ${color.g}, ${color.b}, 0.8)`;
+                ctx.fill();
+                
+                // Membrane
+                ctx.lineWidth = this.traits.membraneThickness;
+                ctx.strokeStyle = `rgba(${Math.min(255, color.r + 30)}, ${Math.min(255, color.g + 30)}, ${Math.min(255, color.b + 30)}, 0.9)`;
+                ctx.stroke();
+                
+                // Nucleus
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, drawSize * 0.3, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(${color.r * 0.6}, ${color.g * 0.6}, ${color.b * 0.6}, 0.9)`;
+                ctx.fill();
+                
+                // Movement appendages
+                this.drawMovementType(ctx, drawSize, color);
+                
+                // Selection indicator
+                if (this.selected) {
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, drawSize + 5, 0, Math.PI * 2);
+                    ctx.strokeStyle = '#40e0a0';
+                    ctx.lineWidth = 2;
+                    ctx.setLineDash([5, 5]);
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+                }
+                
+                // Energy bar
+                const barWidth = drawSize * 2;
+                const barHeight = 3;
+                const barY = this.y + drawSize + 8;
+                const energyRatio = Math.min(1, this.energy / this.traits.reproductionThreshold);
+                
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+                ctx.fillRect(this.x - barWidth/2, barY, barWidth, barHeight);
+                
+                const energyColor = energyRatio > 0.5 ? '#40e0a0' : (energyRatio > 0.25 ? '#e0c040' : '#e04040');
+                ctx.fillStyle = energyColor;
+                ctx.fillRect(this.x - barWidth/2, barY, barWidth * energyRatio, barHeight);
+            }
+
+            drawMovementType(ctx, size, color) {
+                const angle = Math.atan2(this.vy, this.vx);
+                
+                if (this.traits.movementType === 'flagellum') {
+                    // Single tail
+                    ctx.beginPath();
+                    ctx.moveTo(
+                        this.x - Math.cos(angle) * size,
+                        this.y - Math.sin(angle) * size
+                    );
+                    
+                    const wave = Math.sin(this.pulsePhase * 3) * 5;
+                    ctx.bezierCurveTo(
+                        this.x - Math.cos(angle) * size * 1.5 + Math.cos(angle + Math.PI/2) * wave,
+                        this.y - Math.sin(angle) * size * 1.5 + Math.sin(angle + Math.PI/2) * wave,
+                        this.x - Math.cos(angle) * size * 2 - Math.cos(angle + Math.PI/2) * wave,
+                        this.y - Math.sin(angle) * size * 2 - Math.sin(angle + Math.PI/2) * wave,
+                        this.x - Math.cos(angle) * size * 2.5,
+                        this.y - Math.sin(angle) * size * 2.5
+                    );
+                    
+                    ctx.strokeStyle = `rgba(${color.r}, ${color.g}, ${color.b}, 0.6)`;
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+                    
+                } else if (this.traits.movementType === 'cilia') {
+                    // Multiple small hairs
+                    const numCilia = 12;
+                    for (let i = 0; i < numCilia; i++) {
+                        const ciliaAngle = (i / numCilia) * Math.PI * 2;
+                        const wave = Math.sin(this.pulsePhase * 5 + i) * 0.3;
+                        
+                        ctx.beginPath();
+                        ctx.moveTo(
+                            this.x + Math.cos(ciliaAngle) * size,
+                            this.y + Math.sin(ciliaAngle) * size
+                        );
+                        ctx.lineTo(
+                            this.x + Math.cos(ciliaAngle + wave) * (size + 6),
+                            this.y + Math.sin(ciliaAngle + wave) * (size + 6)
+                        );
+                        ctx.strokeStyle = `rgba(${color.r}, ${color.g}, ${color.b}, 0.4)`;
+                        ctx.lineWidth = 1;
+                        ctx.stroke();
+                    }
+                    
+                } else if (this.traits.movementType === 'pseudopod') {
+                    // Amoeba-like extensions
+                    const numPods = 4;
+                    for (let i = 0; i < numPods; i++) {
+                        const podAngle = (i / numPods) * Math.PI * 2 + this.pulsePhase * 0.2;
+                        const podLength = size * (0.5 + Math.sin(this.pulsePhase + i * 2) * 0.3);
+                        
+                        ctx.beginPath();
+                        ctx.ellipse(
+                            this.x + Math.cos(podAngle) * size * 0.8,
+                            this.y + Math.sin(podAngle) * size * 0.8,
+                            podLength,
+                            podLength * 0.5,
+                            podAngle,
+                            0, Math.PI * 2
+                        );
+                        ctx.fillStyle = `rgba(${color.r}, ${color.g}, ${color.b}, 0.5)`;
+                        ctx.fill();
+                    }
+                }
+            }
+        }
+
+        // ============================================
+        // FOOD PARTICLES
+        // ============================================
+
+        class Food {
+            constructor(type, x, y) {
+                this.type = type;
+                this.x = x;
+                this.y = y;
+                this.age = 0;
+                
+                // Properties based on type
+                if (type === 'oxygen') {
+                    this.size = 4;
+                    this.energy = 5;
+                    this.color = { r: 100, g: 180, b: 255 };
+                    this.lifespan = 600;
+                } else if (type === 'glucose') {
+                    this.size = 6;
+                    this.energy = 15;
+                    this.color = { r: 255, g: 200, b: 100 };
+                    this.lifespan = 400;
+                } else if (type === 'amino') {
+                    this.size = 8;
+                    this.energy = 30;
+                    this.color = { r: 255, g: 100, b: 180 };
+                    this.lifespan = 300;
+                }
+                
+                this.vx = (Math.random() - 0.5) * 0.5;
+                this.vy = (Math.random() - 0.5) * 0.5;
+                this.consumed = false;
+            }
+
+            update() {
+                this.age++;
+                
+                // Gentle drift
+                this.x += this.vx;
+                this.y += this.vy;
+                
+                // Boundary wrapping
+                if (this.x < 0) this.x = canvas.width;
+                if (this.x > canvas.width) this.x = 0;
+                if (this.y < 0) this.y = canvas.height;
+                if (this.y > canvas.height) this.y = 0;
+                
+                // Decay
+                if (this.age > this.lifespan) {
+                    this.consumed = true;
+                }
+            }
+
+            draw(ctx) {
+                const alpha = Math.max(0.3, 1 - this.age / this.lifespan);
+                const pulse = Math.sin(this.age * 0.1) * 0.2 + 1;
+                
+                // Glow
+                const gradient = ctx.createRadialGradient(
+                    this.x, this.y, 0,
+                    this.x, this.y, this.size * 2 * pulse
+                );
+                gradient.addColorStop(0, `rgba(${this.color.r}, ${this.color.g}, ${this.color.b}, ${alpha * 0.5})`);
+                gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+                
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size * 2 * pulse, 0, Math.PI * 2);
+                ctx.fillStyle = gradient;
+                ctx.fill();
+                
+                // Core
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size * pulse, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(${this.color.r}, ${this.color.g}, ${this.color.b}, ${alpha})`;
+                ctx.fill();
+            }
+        }
+
+        // ============================================
+        // SIMULATION STATE
+        // ============================================
+
+        let organisms = [];
+        let foods = [];
+        let stats = {
+            births: 0,
+            deaths: 0,
+            maxGeneration: 1,
+            timeElapsed: 0
+        };
+
+        let settings = {
+            foodSpawnRate: 1,
+            mutationRate: 0.05,
+            speed: 1,
+            paused: false
+        };
+
+        let selectedOrganism = null;
+
+        // ============================================
+        // INITIALIZATION
+        // ============================================
+
+        function init() {
+            // Create initial organisms
+            for (let i = 0; i < 20; i++) {
+                organisms.push(new Organism(
+                    Math.random() * canvas.width,
+                    Math.random() * canvas.height
+                ));
+            }
+            
+            // Create initial food
+            spawnFood('oxygen', 100);
+            spawnFood('glucose', 50);
+            spawnFood('amino', 20);
+        }
+
+        function spawnFood(type, count) {
+            for (let i = 0; i < count; i++) {
+                foods.push(new Food(
+                    type,
+                    Math.random() * canvas.width,
+                    Math.random() * canvas.height
+                ));
+            }
+        }
+
+        // ============================================
+        // GAME LOOP
+        // ============================================
+
+        let lastTime = 0;
+        let foodSpawnTimer = 0;
+
+        function gameLoop(timestamp) {
+            const deltaTime = Math.min(50, timestamp - lastTime) / 16.67; // Normalize to ~60fps
+            lastTime = timestamp;
+            
+            if (!settings.paused) {
+                for (let i = 0; i < settings.speed; i++) {
+                    update(deltaTime);
+                }
+                stats.timeElapsed += deltaTime * settings.speed / 60;
+            }
+            
+            render();
+            updateUI();
+            
+            requestAnimationFrame(gameLoop);
+        }
+
+        function update(deltaTime) {
+            // Spawn food periodically
+            foodSpawnTimer += deltaTime * settings.foodSpawnRate;
+            if (foodSpawnTimer > 30) {
+                foodSpawnTimer = 0;
+                
+                // Spawn based on current food levels
+                const oxygenCount = foods.filter(f => f.type === 'oxygen').length;
+                const glucoseCount = foods.filter(f => f.type === 'glucose').length;
+                const aminoCount = foods.filter(f => f.type === 'amino').length;
+                
+                if (oxygenCount < 150) spawnFood('oxygen', 3);
+                if (glucoseCount < 80) spawnFood('glucose', 2);
+                if (aminoCount < 30) spawnFood('amino', 1);
+            }
+            
+            // Update foods
+            foods.forEach(food => food.update());
+            foods = foods.filter(f => !f.consumed);
+            
+            // Update organisms
+            const newOrganisms = [];
+            
+            organisms.forEach(org => {
+                org.update(deltaTime, foods, organisms);
+                
+                // Try to eat
+                for (const food of foods) {
+                    if (org.tryEat(food)) {
+                        food.consumed = true;
+                    }
+                }
+                
+                // Try to reproduce
+                if (org.canReproduce()) {
+                    const child = org.reproduce(settings.mutationRate);
+                    if (child) {
+                        newOrganisms.push(child);
+                    }
+                }
+            });
+            
+            // Remove dead, add new
+            organisms = organisms.filter(o => !o.dead);
+            organisms.push(...newOrganisms);
+            
+            // Update selected organism reference
+            if (selectedOrganism && selectedOrganism.dead) {
+                selectedOrganism = null;
+            }
+        }
+
+        function render() {
+            // Clear
+            ctx.fillStyle = '#060a08';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw subtle grid
+            ctx.strokeStyle = 'rgba(40, 80, 60, 0.1)';
+            ctx.lineWidth = 1;
+            const gridSize = 50;
+            for (let x = 0; x < canvas.width; x += gridSize) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, canvas.height);
+                ctx.stroke();
+            }
+            for (let y = 0; y < canvas.height; y += gridSize) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(canvas.width, y);
+                ctx.stroke();
+            }
+            
+            // Draw food
+            foods.forEach(food => food.draw(ctx));
+            
+            // Draw organisms
+            organisms.forEach(org => org.draw(ctx));
+        }
+
+        // ============================================
+        // UI UPDATES
+        // ============================================
+
+        function updateUI() {
+            document.getElementById('population').textContent = organisms.length;
+            document.getElementById('generation').textContent = stats.maxGeneration;
+            document.getElementById('births').textContent = stats.births;
+            document.getElementById('deaths').textContent = stats.deaths;
+            
+            // Food counts
+            const oxygenCount = foods.filter(f => f.type === 'oxygen').length;
+            const glucoseCount = foods.filter(f => f.type === 'glucose').length;
+            const aminoCount = foods.filter(f => f.type === 'amino').length;
+            
+            document.getElementById('oxygenCount').textContent = oxygenCount;
+            document.getElementById('glucoseCount').textContent = glucoseCount;
+            document.getElementById('aminoCount').textContent = aminoCount;
+            
+            document.getElementById('oxygenBar').style.width = Math.min(100, oxygenCount / 1.5) + '%';
+            document.getElementById('glucoseBar').style.width = Math.min(100, glucoseCount / 0.8) + '%';
+            document.getElementById('aminoBar').style.width = Math.min(100, aminoCount / 0.3) + '%';
+            
+            // Time
+            const minutes = Math.floor(stats.timeElapsed / 60);
+            const seconds = Math.floor(stats.timeElapsed % 60);
+            document.getElementById('timeElapsed').textContent = 
+                `${minutes}:${seconds.toString().padStart(2, '0')}`;
+            
+            // Species distribution
+            updateSpeciesBar();
+            
+            // Selected organism info
+            updateOrganismInfo();
+        }
+
+        function updateSpeciesBar() {
+            const speciesCount = {};
+            organisms.forEach(org => {
+                const sig = org.dna.getSpeciesSignature();
+                speciesCount[sig] = (speciesCount[sig] || 0) + 1;
+            });
+            
+            const bar = document.getElementById('speciesBar');
+            const legend = document.getElementById('speciesLegend');
+            
+            bar.innerHTML = '';
+            legend.innerHTML = '';
+            
+            const total = organisms.length || 1;
+            const species = Object.entries(speciesCount).sort((a, b) => b[1] - a[1]);
+            
+            let offset = 0;
+            species.slice(0, 5).forEach(([sig, count], i) => {
+                const width = (count / total) * 100;
+                const org = organisms.find(o => o.dna.getSpeciesSignature() === sig);
+                const color = org ? org.traits.color : { r: 128, g: 128, b: 128 };
+                
+                const segment = document.createElement('div');
+                segment.style.cssText = `
+                    position: absolute;
+                    left: ${offset}%;
+                    width: ${width}%;
+                    height: 100%;
+                    background: rgba(${color.r}, ${color.g}, ${color.b}, 0.6);
+                    transition: all 0.3s;
+                `;
+                bar.appendChild(segment);
+                
+                const legendItem = document.createElement('div');
+                legendItem.className = 'legend-item';
+                legendItem.innerHTML = `
+                    <div class="legend-dot" style="background: rgb(${color.r}, ${color.g}, ${color.b})"></div>
+                    <span>${count}</span>
+                `;
+                legend.appendChild(legendItem);
+                
+                offset += width;
+            });
+        }
+
+        function updateOrganismInfo() {
+            const infoPanel = document.getElementById('organismInfo');
+            
+            if (!selectedOrganism) {
+                infoPanel.classList.remove('active');
+                return;
+            }
+            
+            infoPanel.classList.add('active');
+            
+            const dnaDisplay = document.getElementById('dnaDisplay');
+            const traitList = document.getElementById('traitList');
+            
+            // DNA visualization
+            dnaDisplay.innerHTML = '';
+            selectedOrganism.dna.chromosomes.forEach((chrom, i) => {
+                const avg = chrom.reduce((a, b) => a + b, 0) / chrom.length;
+                const hue = (avg / 255) * 120;
+                
+                const div = document.createElement('div');
+                div.className = 'chromosome';
+                div.style.background = `hsla(${hue}, 60%, 40%, 0.6)`;
+                div.textContent = `C${i + 1}`;
+                dnaDisplay.appendChild(div);
+            });
+            
+            // Traits
+            const traits = selectedOrganism.traits;
+            traitList.innerHTML = `
+                <div class="trait-item">
+                    <span class="trait-name">Movement</span>
+                    <span class="trait-value">${traits.movementType}</span>
+                </div>
+                <div class="trait-item">
+                    <span class="trait-name">Speed</span>
+                    <span class="trait-value">${traits.baseSpeed.toFixed(2)}</span>
+                </div>
+                <div class="trait-item">
+                    <span class="trait-name">Size</span>
+                    <span class="trait-value">${traits.size.toFixed(1)}</span>
+                </div>
+                <div class="trait-item">
+                    <span class="trait-name">Primary Food</span>
+                    <span class="trait-value">${traits.primaryFood}</span>
+                </div>
+                <div class="trait-item">
+                    <span class="trait-name">Can Eat</span>
+                    <span class="trait-value">${[
+                        traits.canEatOxygen ? 'O₂' : '',
+                        traits.canEatGlucose ? 'G' : '',
+                        traits.canEatAmino ? 'A' : ''
+                    ].filter(x => x).join(' ')}</span>
+                </div>
+                <div class="trait-item">
+                    <span class="trait-name">Energy</span>
+                    <span class="trait-value">${selectedOrganism.energy.toFixed(1)}</span>
+                </div>
+                <div class="trait-item">
+                    <span class="trait-name">Generation</span>
+                    <span class="trait-value">${selectedOrganism.generation}</span>
+                </div>
+                <div class="trait-item">
+                    <span class="trait-name">Sensor Range</span>
+                    <span class="trait-value">${traits.sensorRange.toFixed(0)}</span>
+                </div>
+            `;
+        }
+
+        // ============================================
+        // EVENT HANDLERS
+        // ============================================
+
+        canvas.addEventListener('click', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            // Deselect all
+            organisms.forEach(o => o.selected = false);
+            selectedOrganism = null;
+            
+            // Find clicked organism
+            for (const org of organisms) {
+                const dist = Math.sqrt((org.x - x) ** 2 + (org.y - y) ** 2);
+                if (dist < org.size + 5) {
+                    org.selected = true;
+                    selectedOrganism = org;
+                    break;
+                }
+            }
+        });
+
+        // Sliders
+        document.getElementById('foodRate').addEventListener('input', (e) => {
+            settings.foodSpawnRate = parseFloat(e.target.value);
+            document.getElementById('foodRateValue').textContent = settings.foodSpawnRate.toFixed(1) + 'x';
+        });
+
+        document.getElementById('mutationRate').addEventListener('input', (e) => {
+            settings.mutationRate = parseInt(e.target.value) / 100;
+            document.getElementById('mutationRateValue').textContent = parseInt(e.target.value) + '%';
+        });
+
+        // Speed buttons
+        document.getElementById('pauseBtn').addEventListener('click', () => {
+            settings.paused = !settings.paused;
+            document.getElementById('pauseBtn').textContent = settings.paused ? '▶' : '⏸';
+            document.getElementById('pauseBtn').classList.toggle('active', settings.paused);
+        });
+
+        ['speed1', 'speed2', 'speed3'].forEach((id, i) => {
+            document.getElementById(id).addEventListener('click', () => {
+                settings.speed = [1, 2, 4][i];
+                settings.paused = false;
+                document.getElementById('pauseBtn').textContent = '⏸';
+                document.getElementById('pauseBtn').classList.remove('active');
+                
+                ['speed1', 'speed2', 'speed3'].forEach((sid, si) => {
+                    document.getElementById(sid).classList.toggle('active', si === i);
+                });
+            });
+        });
+
+        // Control buttons
+        document.getElementById('addOrganisms').addEventListener('click', () => {
+            for (let i = 0; i < 10; i++) {
+                organisms.push(new Organism(
+                    Math.random() * canvas.width,
+                    Math.random() * canvas.height
+                ));
+            }
+        });
+
+        document.getElementById('addFood').addEventListener('click', () => {
+            spawnFood('oxygen', 30);
+            spawnFood('glucose', 20);
+            spawnFood('amino', 10);
+        });
+
+        document.getElementById('reset').addEventListener('click', () => {
+            organisms = [];
+            foods = [];
+            stats = { births: 0, deaths: 0, maxGeneration: 1, timeElapsed: 0 };
+            selectedOrganism = null;
+            init();
+        });
+
+        // ============================================
+        // START
+        // ============================================
+
+        init();
+        requestAnimationFrame(gameLoop);
+    </script>
+</body>
+</html>
