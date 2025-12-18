@@ -537,6 +537,47 @@
             color: #60ffc0;
         }
 
+        .organism-preview {
+            width: 60px;
+            height: 60px;
+            border-radius: 8px;
+            background: rgba(15, 53, 53, 0.8);
+            border: 1px solid rgba(100, 200, 150, 0.2);
+        }
+
+        .survivors-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 15px;
+        }
+
+        .survivor-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            padding: 12px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .survivor-rank {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 14px;
+            color: #40e0a0;
+        }
+
+        .survivor-stats {
+            font-size: 11px;
+            color: rgba(192, 224, 208, 0.8);
+        }
+
+        .survivor-stats span {
+            display: block;
+            margin-top: 2px;
+        }
+
         .summary-stats {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
@@ -745,6 +786,11 @@
                     <div class="stats-card full-width">
                         <div class="stats-card-title">🔬 Trait Averages Comparison</div>
                         <div id="traitAverages"></div>
+                    </div>
+
+                    <div class="stats-card full-width">
+                        <div class="stats-card-title">🦠 Top 5 Survivors</div>
+                        <div class="survivors-grid" id="survivorsList"></div>
                     </div>
                 </div>
             </div>
@@ -2293,6 +2339,123 @@
                         </div>
                     </div>
                 `).join('');
+            }
+
+            // Top 5 Survivors (alive organisms with longest survival time)
+            const survivors = organisms
+                .filter(o => !o.dead)
+                .sort((a, b) => b.age - a.age)
+                .slice(0, 5);
+
+            const survivorsList = document.getElementById('survivorsList');
+            if (survivors.length === 0) {
+                survivorsList.innerHTML = '<div class="no-data-message" style="grid-column: 1 / -1;">No living organisms</div>';
+            } else {
+                survivorsList.innerHTML = survivors.map((org, i) => `
+                    <div class="survivor-card">
+                        <div class="survivor-rank">#${i + 1}</div>
+                        <canvas class="organism-preview" id="survivor-canvas-${i}" width="60" height="60"></canvas>
+                        <div class="survivor-stats">
+                            <span>${(org.age / 60).toFixed(1)}s alive</span>
+                            <span>generation ${org.generation}</span>
+                            <span>${org.traits.movementType}</span>
+                        </div>
+                    </div>
+                `).join('');
+
+                // Render organism previews into canvases
+                survivors.forEach((org, i) => {
+                    const canvas = document.getElementById(`survivor-canvas-${i}`);
+                    if (canvas) {
+                        renderOrganismPreview(canvas, org);
+                    }
+                });
+            }
+        }
+
+        function renderOrganismPreview(canvas, org) {
+            const ctx = canvas.getContext('2d');
+            const w = canvas.width;
+            const h = canvas.height;
+            const centerX = w / 2;
+            const centerY = h / 2;
+
+            ctx.clearRect(0, 0, w, h);
+
+            const color = org.traits.color;
+            const drawSize = Math.min(18, org.size * 0.6);
+            const pulse = Math.sin(org.pulsePhase) * 0.1 + 1;
+            const size = drawSize * pulse;
+
+            // Glow effect
+            const gradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, size * 2);
+            gradient.addColorStop(0, `rgba(${color.r}, ${color.g}, ${color.b}, 0.3)`);
+            gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, size * 2, 0, Math.PI * 2);
+            ctx.fillStyle = gradient;
+            ctx.fill();
+
+            // Cell body
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, size, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(${color.r}, ${color.g}, ${color.b}, 0.8)`;
+            ctx.fill();
+
+            // Membrane
+            ctx.lineWidth = Math.min(2, org.traits.membraneThickness);
+            ctx.strokeStyle = `rgba(${Math.min(255, color.r + 30)}, ${Math.min(255, color.g + 30)}, ${Math.min(255, color.b + 30)}, 0.9)`;
+            ctx.stroke();
+
+            // Nucleus
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, size * 0.3, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(${color.r * 0.6}, ${color.g * 0.6}, ${color.b * 0.6}, 0.9)`;
+            ctx.fill();
+
+            // Movement appendages
+            const angle = Math.atan2(org.vy || 0, org.vx || 1);
+            if (org.traits.movementType === 'flagellum') {
+                ctx.beginPath();
+                ctx.moveTo(centerX - Math.cos(angle) * size, centerY - Math.sin(angle) * size);
+                const wave = Math.sin(org.pulsePhase * 3) * 3;
+                ctx.bezierCurveTo(
+                    centerX - Math.cos(angle) * size * 1.5 + Math.cos(angle + Math.PI/2) * wave,
+                    centerY - Math.sin(angle) * size * 1.5 + Math.sin(angle + Math.PI/2) * wave,
+                    centerX - Math.cos(angle) * size * 2 - Math.cos(angle + Math.PI/2) * wave,
+                    centerY - Math.sin(angle) * size * 2 - Math.sin(angle + Math.PI/2) * wave,
+                    centerX - Math.cos(angle) * size * 2.5,
+                    centerY - Math.sin(angle) * size * 2.5
+                );
+                ctx.strokeStyle = `rgba(${color.r}, ${color.g}, ${color.b}, 0.6)`;
+                ctx.lineWidth = 1.5;
+                ctx.stroke();
+            } else if (org.traits.movementType === 'cilia') {
+                const numCilia = 8;
+                for (let i = 0; i < numCilia; i++) {
+                    const ciliaAngle = (i / numCilia) * Math.PI * 2;
+                    const wave = Math.sin(org.pulsePhase * 5 + i) * 0.3;
+                    ctx.beginPath();
+                    ctx.moveTo(centerX + Math.cos(ciliaAngle) * size, centerY + Math.sin(ciliaAngle) * size);
+                    ctx.lineTo(centerX + Math.cos(ciliaAngle + wave) * (size + 4), centerY + Math.sin(ciliaAngle + wave) * (size + 4));
+                    ctx.strokeStyle = `rgba(${color.r}, ${color.g}, ${color.b}, 0.4)`;
+                    ctx.lineWidth = 1;
+                    ctx.stroke();
+                }
+            } else if (org.traits.movementType === 'pseudopod') {
+                const numPods = 3;
+                for (let i = 0; i < numPods; i++) {
+                    const podAngle = (i / numPods) * Math.PI * 2 + org.pulsePhase * 0.2;
+                    const podLength = size * (0.4 + Math.sin(org.pulsePhase + i * 2) * 0.2);
+                    ctx.beginPath();
+                    ctx.ellipse(
+                        centerX + Math.cos(podAngle) * size * 0.7,
+                        centerY + Math.sin(podAngle) * size * 0.7,
+                        podLength, podLength * 0.5, podAngle, 0, Math.PI * 2
+                    );
+                    ctx.fillStyle = `rgba(${color.r}, ${color.g}, ${color.b}, 0.5)`;
+                    ctx.fill();
+                }
             }
         }
 
