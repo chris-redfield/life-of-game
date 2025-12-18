@@ -395,6 +395,258 @@
             background: rgba(64, 224, 160, 0.3);
             border-color: #40e0a0;
         }
+
+        /* Stats Overlay */
+        .stats-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(8, 25, 22, 0.95);
+            z-index: 100;
+            display: none;
+            overflow-y: auto;
+            padding: 30px;
+        }
+
+        .stats-overlay.active {
+            display: block;
+        }
+
+        .stats-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(100, 200, 150, 0.3);
+        }
+
+        .stats-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 24px;
+            color: #40e0a0;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            text-shadow: 0 0 20px rgba(64, 224, 160, 0.5);
+        }
+
+        .close-stats {
+            background: rgba(255, 100, 100, 0.2);
+            border: 1px solid rgba(255, 100, 100, 0.4);
+            color: #ff8080;
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .close-stats:hover {
+            background: rgba(255, 100, 100, 0.3);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+        }
+
+        .stats-card {
+            background: rgba(15, 40, 35, 0.6);
+            border: 1px solid rgba(100, 200, 150, 0.2);
+            border-radius: 12px;
+            padding: 20px;
+        }
+
+        .stats-card.full-width {
+            grid-column: 1 / -1;
+        }
+
+        .stats-card-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 14px;
+            color: #40e0a0;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(100, 200, 150, 0.15);
+        }
+
+        .chart-container {
+            height: 150px;
+            position: relative;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+            padding: 10px;
+        }
+
+        .chart-container.tall {
+            height: 200px;
+        }
+
+        .top-organisms-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .top-organism-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+        }
+
+        .organism-rank {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 18px;
+            color: #40e0a0;
+            width: 30px;
+        }
+
+        .organism-color-dot {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .organism-details {
+            flex: 1;
+        }
+
+        .organism-stat-name {
+            font-size: 13px;
+            color: rgba(192, 224, 208, 0.8);
+            margin-bottom: 3px;
+        }
+
+        .organism-stat-value {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 11px;
+            color: #60ffc0;
+        }
+
+        .summary-stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .summary-stat {
+            text-align: center;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+        }
+
+        .summary-stat-value {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 28px;
+            color: #60ffc0;
+            text-shadow: 0 0 15px rgba(96, 255, 192, 0.4);
+        }
+
+        .summary-stat-label {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: rgba(192, 224, 208, 0.6);
+            margin-top: 5px;
+        }
+
+        .distribution-bar {
+            display: flex;
+            height: 30px;
+            border-radius: 6px;
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+
+        .distribution-segment {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            font-family: 'Orbitron', sans-serif;
+            color: rgba(0, 0, 0, 0.7);
+            transition: all 0.3s;
+        }
+
+        .distribution-legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 10px;
+        }
+
+        .distribution-legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+        }
+
+        .distribution-legend-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 3px;
+        }
+
+        .no-data-message {
+            text-align: center;
+            padding: 30px;
+            color: rgba(192, 224, 208, 0.5);
+            font-style: italic;
+        }
+
+        .trait-avg-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+
+        .trait-avg-item {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 12px;
+            border-radius: 8px;
+        }
+
+        .trait-avg-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 12px;
+        }
+
+        .trait-avg-name {
+            color: rgba(192, 224, 208, 0.8);
+        }
+
+        .trait-avg-value {
+            font-family: 'Orbitron', sans-serif;
+            color: #60ffc0;
+        }
+
+        .trait-avg-bar-bg {
+            height: 8px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .trait-avg-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.3s;
+        }
     </style>
 </head>
 <body>
@@ -403,6 +655,95 @@
             <canvas id="canvas"></canvas>
             <div class="ambient-overlay"></div>
             <div class="tooltip" id="tooltip"></div>
+            
+            <!-- Stats Overlay -->
+            <div class="stats-overlay" id="statsOverlay">
+                <div class="stats-header">
+                    <h2 class="stats-title">📊 Statistics Report</h2>
+                    <button class="close-stats" id="closeStats">← Return to Simulation</button>
+                </div>
+                
+                <div class="summary-stats">
+                    <div class="summary-stat">
+                        <div class="summary-stat-value" id="statTotalBorn">0</div>
+                        <div class="summary-stat-label">Total Born</div>
+                    </div>
+                    <div class="summary-stat">
+                        <div class="summary-stat-value" id="statTotalDied">0</div>
+                        <div class="summary-stat-label">Total Died</div>
+                    </div>
+                    <div class="summary-stat">
+                        <div class="summary-stat-value" id="statCurrentPop">0</div>
+                        <div class="summary-stat-label">Current Pop.</div>
+                    </div>
+                    <div class="summary-stat">
+                        <div class="summary-stat-value" id="statPeakPop">0</div>
+                        <div class="summary-stat-label">Peak Pop.</div>
+                    </div>
+                </div>
+                
+                <div class="stats-grid">
+                    <div class="stats-card full-width">
+                        <div class="stats-card-title">📈 Population Over Time</div>
+                        <div class="chart-container tall">
+                            <canvas id="populationChart"></canvas>
+                        </div>
+                    </div>
+                    
+                    <div class="stats-card full-width">
+                        <div class="stats-card-title">💀 Births & Deaths Over Time</div>
+                        <div class="chart-container tall">
+                            <canvas id="birthDeathChart"></canvas>
+                        </div>
+                    </div>
+                    
+                    <div class="stats-card">
+                        <div class="stats-card-title">🦠 Movement Type Distribution</div>
+                        <div id="movementDistribution"></div>
+                    </div>
+                    
+                    <div class="stats-card">
+                        <div class="stats-card-title">🍽️ Metabolism Distribution</div>
+                        <div id="metabolismDistribution"></div>
+                    </div>
+                    
+                    <div class="stats-card">
+                        <div class="stats-card-title">🏆 Longest Lived Organisms</div>
+                        <div class="top-organisms-list" id="longestLivedList"></div>
+                    </div>
+                    
+                    <div class="stats-card">
+                        <div class="stats-card-title">👶 Most Offspring</div>
+                        <div class="top-organisms-list" id="mostOffspringList"></div>
+                    </div>
+                    
+                    <div class="stats-card full-width">
+                        <div class="stats-card-title">📊 Average Traits Over Generations</div>
+                        <div class="chart-container">
+                            <canvas id="traitsChart"></canvas>
+                        </div>
+                    </div>
+                    
+                    <div class="stats-card">
+                        <div class="stats-card-title">🧬 Generation Distribution</div>
+                        <div class="chart-container">
+                            <canvas id="generationChart"></canvas>
+                        </div>
+                    </div>
+                    
+                    <div class="stats-card">
+                        <div class="stats-card-title">⚡ Size vs Speed</div>
+                        <div class="chart-container">
+                            <canvas id="sizeSpeedChart"></canvas>
+                        </div>
+                    </div>
+                    
+                    <div class="stats-card full-width">
+                        <div class="stats-card-title">🔬 Trait Averages Comparison</div>
+                        <div id="traitAverages"></div>
+                    </div>
+                </div>
+            </div>
         </div>
         
         <div class="side-panel">
@@ -490,6 +831,7 @@
             </div>
 
             <div class="controls">
+                <button class="btn" id="showStats">📊 View Statistics</button>
                 <button class="btn" id="addOrganisms">+ Add 10 Organisms</button>
                 <button class="btn" id="addFood">+ Add Food Burst</button>
                 <button class="btn danger" id="reset">Reset Simulation</button>
@@ -676,6 +1018,11 @@
                 
                 this.selected = false;
                 this.dead = false;
+                
+                // Stats tracking
+                this.offspringCount = 0;
+                this.foodEaten = 0;
+                this.maxEnergy = this.energy;
             }
 
             update(deltaTime, foods, organisms) {
@@ -789,6 +1136,8 @@
                     
                     energyGain *= this.traits.metabolicRate;
                     this.energy += energyGain;
+                    this.foodEaten++;
+                    this.maxEnergy = Math.max(this.maxEnergy, this.energy);
                     
                     return true;
                 }
@@ -820,6 +1169,9 @@
                 );
                 child.energy = childEnergy;
                 child.generation = this.generation + 1;
+                
+                // Track offspring
+                this.offspringCount++;
                 
                 stats.births++;
                 stats.maxGeneration = Math.max(stats.maxGeneration, child.generation);
@@ -1053,7 +1405,21 @@
             births: 0,
             deaths: 0,
             maxGeneration: 1,
-            timeElapsed: 0
+            timeElapsed: 0,
+            peakPopulation: 0,
+            // History tracking (recorded every ~2 seconds of game time)
+            history: {
+                population: [],
+                births: [],
+                deaths: [],
+                timestamps: [],
+                avgSpeed: [],
+                avgSize: []
+            },
+            lastHistoryTime: 0,
+            // Archive of dead organisms for analysis
+            deadArchive: [],
+            maxArchiveSize: 100
         };
 
         let settings = {
@@ -1064,6 +1430,7 @@
         };
 
         let selectedOrganism = null;
+        let showingStats = false;
 
         // ============================================
         // INITIALIZATION
@@ -1140,9 +1507,16 @@
             
             // Update organisms
             const newOrganisms = [];
+            const newlyDead = [];
             
             organisms.forEach(org => {
+                const wasDead = org.dead;
                 org.update(deltaTime, foods, organisms);
+                
+                // Track newly dead organisms
+                if (org.dead && !wasDead) {
+                    newlyDead.push(org);
+                }
                 
                 // Try to eat
                 for (const food of foods) {
@@ -1160,9 +1534,62 @@
                 }
             });
             
+            // Archive dead organisms for stats
+            newlyDead.forEach(org => {
+                stats.deadArchive.push({
+                    id: org.id,
+                    age: org.age,
+                    generation: org.generation,
+                    offspringCount: org.offspringCount,
+                    foodEaten: org.foodEaten,
+                    maxEnergy: org.maxEnergy,
+                    traits: { ...org.traits },
+                    color: { ...org.traits.color }
+                });
+                
+                // Keep archive manageable
+                if (stats.deadArchive.length > stats.maxArchiveSize) {
+                    stats.deadArchive.shift();
+                }
+            });
+            
             // Remove dead, add new
             organisms = organisms.filter(o => !o.dead);
             organisms.push(...newOrganisms);
+            
+            // Track peak population
+            stats.peakPopulation = Math.max(stats.peakPopulation, organisms.length);
+            
+            // Record history every 2 seconds of game time
+            if (stats.timeElapsed - stats.lastHistoryTime >= 2) {
+                stats.lastHistoryTime = stats.timeElapsed;
+                
+                stats.history.timestamps.push(stats.timeElapsed);
+                stats.history.population.push(organisms.length);
+                stats.history.births.push(stats.births);
+                stats.history.deaths.push(stats.deaths);
+                
+                // Calculate average traits
+                if (organisms.length > 0) {
+                    const avgSpeed = organisms.reduce((sum, o) => sum + o.traits.baseSpeed, 0) / organisms.length;
+                    const avgSize = organisms.reduce((sum, o) => sum + o.traits.size, 0) / organisms.length;
+                    stats.history.avgSpeed.push(avgSpeed);
+                    stats.history.avgSize.push(avgSize);
+                } else {
+                    stats.history.avgSpeed.push(0);
+                    stats.history.avgSize.push(0);
+                }
+                
+                // Keep history manageable (last 100 data points)
+                if (stats.history.timestamps.length > 100) {
+                    stats.history.timestamps.shift();
+                    stats.history.population.shift();
+                    stats.history.births.shift();
+                    stats.history.deaths.shift();
+                    stats.history.avgSpeed.shift();
+                    stats.history.avgSize.shift();
+                }
+            }
             
             // Update selected organism reference
             if (selectedOrganism && selectedOrganism.dead) {
@@ -1430,10 +1857,618 @@
         document.getElementById('reset').addEventListener('click', () => {
             organisms = [];
             foods = [];
-            stats = { births: 0, deaths: 0, maxGeneration: 1, timeElapsed: 0 };
+            stats = {
+                births: 0,
+                deaths: 0,
+                maxGeneration: 1,
+                timeElapsed: 0,
+                peakPopulation: 0,
+                history: {
+                    population: [],
+                    births: [],
+                    deaths: [],
+                    timestamps: [],
+                    avgSpeed: [],
+                    avgSize: []
+                },
+                lastHistoryTime: 0,
+                deadArchive: [],
+                maxArchiveSize: 100
+            };
             selectedOrganism = null;
+            showingStats = false;
+            document.getElementById('statsOverlay').classList.remove('active');
             init();
         });
+
+        // Stats overlay handlers
+        document.getElementById('showStats').addEventListener('click', () => {
+            showingStats = true;
+            settings.paused = true;
+            document.getElementById('pauseBtn').textContent = '▶';
+            document.getElementById('pauseBtn').classList.add('active');
+            document.getElementById('statsOverlay').classList.add('active');
+            renderStatsOverlay();
+        });
+
+        document.getElementById('closeStats').addEventListener('click', () => {
+            showingStats = false;
+            document.getElementById('statsOverlay').classList.remove('active');
+        });
+
+        // ============================================
+        // STATS OVERLAY RENDERING
+        // ============================================
+
+        function renderStatsOverlay() {
+            // Update summary stats
+            document.getElementById('statTotalBorn').textContent = stats.births;
+            document.getElementById('statTotalDied').textContent = stats.deaths;
+            document.getElementById('statCurrentPop').textContent = organisms.length;
+            document.getElementById('statPeakPop').textContent = stats.peakPopulation;
+            
+            // Render charts
+            renderPopulationChart();
+            renderBirthDeathChart();
+            renderMovementDistribution();
+            renderMetabolismDistribution();
+            renderTopOrganisms();
+            renderTraitsChart();
+            renderGenerationChart();
+            renderSizeSpeedChart();
+            renderTraitAverages();
+        }
+
+        function renderPopulationChart() {
+            const canvas = document.getElementById('populationChart');
+            const ctx = canvas.getContext('2d');
+            
+            // Set canvas size
+            canvas.width = canvas.parentElement.clientWidth - 20;
+            canvas.height = canvas.parentElement.clientHeight - 20;
+            
+            const w = canvas.width;
+            const h = canvas.height;
+            const padding = 40;
+            
+            ctx.clearRect(0, 0, w, h);
+            
+            const data = stats.history.population;
+            const timestamps = stats.history.timestamps;
+            
+            if (data.length < 2) {
+                ctx.fillStyle = 'rgba(192, 224, 208, 0.5)';
+                ctx.font = '14px Rajdhani';
+                ctx.textAlign = 'center';
+                ctx.fillText('Not enough data yet...', w / 2, h / 2);
+                return;
+            }
+            
+            const maxPop = Math.max(...data, 1);
+            const minTime = timestamps[0];
+            const maxTime = timestamps[timestamps.length - 1];
+            
+            // Draw axes
+            ctx.strokeStyle = 'rgba(100, 200, 150, 0.3)';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(padding, padding);
+            ctx.lineTo(padding, h - padding);
+            ctx.lineTo(w - padding, h - padding);
+            ctx.stroke();
+            
+            // Draw grid lines
+            ctx.strokeStyle = 'rgba(100, 200, 150, 0.1)';
+            for (let i = 0; i <= 4; i++) {
+                const y = padding + (h - 2 * padding) * (1 - i / 4);
+                ctx.beginPath();
+                ctx.moveTo(padding, y);
+                ctx.lineTo(w - padding, y);
+                ctx.stroke();
+                
+                // Y-axis labels
+                ctx.fillStyle = 'rgba(192, 224, 208, 0.6)';
+                ctx.font = '10px Orbitron';
+                ctx.textAlign = 'right';
+                ctx.fillText(Math.round(maxPop * i / 4), padding - 5, y + 3);
+            }
+            
+            // Draw population line
+            ctx.strokeStyle = '#40e0a0';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            
+            data.forEach((pop, i) => {
+                const x = padding + (timestamps[i] - minTime) / (maxTime - minTime) * (w - 2 * padding);
+                const y = h - padding - (pop / maxPop) * (h - 2 * padding);
+                
+                if (i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            });
+            ctx.stroke();
+            
+            // Draw area under line
+            ctx.lineTo(padding + (w - 2 * padding), h - padding);
+            ctx.lineTo(padding, h - padding);
+            ctx.closePath();
+            ctx.fillStyle = 'rgba(64, 224, 160, 0.1)';
+            ctx.fill();
+            
+            // X-axis label
+            ctx.fillStyle = 'rgba(192, 224, 208, 0.6)';
+            ctx.font = '10px Rajdhani';
+            ctx.textAlign = 'center';
+            ctx.fillText('Time (seconds)', w / 2, h - 5);
+        }
+
+        function renderBirthDeathChart() {
+            const canvas = document.getElementById('birthDeathChart');
+            const ctx = canvas.getContext('2d');
+            
+            canvas.width = canvas.parentElement.clientWidth - 20;
+            canvas.height = canvas.parentElement.clientHeight - 20;
+            
+            const w = canvas.width;
+            const h = canvas.height;
+            const padding = 40;
+            
+            ctx.clearRect(0, 0, w, h);
+            
+            const births = stats.history.births;
+            const deaths = stats.history.deaths;
+            const timestamps = stats.history.timestamps;
+            
+            if (births.length < 2) {
+                ctx.fillStyle = 'rgba(192, 224, 208, 0.5)';
+                ctx.font = '14px Rajdhani';
+                ctx.textAlign = 'center';
+                ctx.fillText('Not enough data yet...', w / 2, h / 2);
+                return;
+            }
+            
+            // Calculate rates (difference between consecutive values)
+            const birthRates = [];
+            const deathRates = [];
+            for (let i = 1; i < births.length; i++) {
+                birthRates.push(births[i] - births[i-1]);
+                deathRates.push(deaths[i] - deaths[i-1]);
+            }
+            
+            const maxRate = Math.max(...birthRates, ...deathRates, 1);
+            const minTime = timestamps[1];
+            const maxTime = timestamps[timestamps.length - 1];
+            
+            // Draw axes
+            ctx.strokeStyle = 'rgba(100, 200, 150, 0.3)';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(padding, padding);
+            ctx.lineTo(padding, h - padding);
+            ctx.lineTo(w - padding, h - padding);
+            ctx.stroke();
+            
+            // Draw birth line (green)
+            ctx.strokeStyle = '#60ffc0';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            birthRates.forEach((rate, i) => {
+                const x = padding + (timestamps[i + 1] - minTime) / (maxTime - minTime) * (w - 2 * padding);
+                const y = h - padding - (rate / maxRate) * (h - 2 * padding);
+                if (i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            });
+            ctx.stroke();
+            
+            // Draw death line (red)
+            ctx.strokeStyle = '#ff6060';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            deathRates.forEach((rate, i) => {
+                const x = padding + (timestamps[i + 1] - minTime) / (maxTime - minTime) * (w - 2 * padding);
+                const y = h - padding - (rate / maxRate) * (h - 2 * padding);
+                if (i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            });
+            ctx.stroke();
+            
+            // Legend
+            ctx.font = '11px Rajdhani';
+            ctx.fillStyle = '#60ffc0';
+            ctx.fillRect(w - 100, 10, 12, 12);
+            ctx.fillText('Births', w - 82, 20);
+            ctx.fillStyle = '#ff6060';
+            ctx.fillRect(w - 100, 28, 12, 12);
+            ctx.fillText('Deaths', w - 82, 38);
+        }
+
+        function renderMovementDistribution() {
+            const container = document.getElementById('movementDistribution');
+            
+            // Count movement types from alive organisms
+            const counts = { none: 0, cilia: 0, flagellum: 0, pseudopod: 0 };
+            organisms.forEach(org => {
+                counts[org.traits.movementType]++;
+            });
+            
+            const total = organisms.length || 1;
+            const colors = {
+                none: '#888888',
+                cilia: '#60c0ff',
+                flagellum: '#ff60c0',
+                pseudopod: '#c0ff60'
+            };
+            
+            let html = '<div class="distribution-bar">';
+            for (const [type, count] of Object.entries(counts)) {
+                const pct = (count / total) * 100;
+                if (pct > 0) {
+                    html += `<div class="distribution-segment" style="width: ${pct}%; background: ${colors[type]}">${pct > 10 ? Math.round(pct) + '%' : ''}</div>`;
+                }
+            }
+            html += '</div><div class="distribution-legend">';
+            for (const [type, count] of Object.entries(counts)) {
+                html += `<div class="distribution-legend-item">
+                    <div class="distribution-legend-dot" style="background: ${colors[type]}"></div>
+                    <span>${type}: ${count}</span>
+                </div>`;
+            }
+            html += '</div>';
+            
+            container.innerHTML = html;
+        }
+
+        function renderMetabolismDistribution() {
+            const container = document.getElementById('metabolismDistribution');
+            
+            // Count what organisms can eat
+            const counts = { oxygen: 0, glucose: 0, amino: 0 };
+            organisms.forEach(org => {
+                if (org.traits.canEatOxygen) counts.oxygen++;
+                if (org.traits.canEatGlucose) counts.glucose++;
+                if (org.traits.canEatAmino) counts.amino++;
+            });
+            
+            const total = organisms.length || 1;
+            const colors = {
+                oxygen: '#4080ff',
+                glucose: '#ffc040',
+                amino: '#ff60b0'
+            };
+            const labels = {
+                oxygen: 'O₂',
+                glucose: 'Glucose',
+                amino: 'Amino'
+            };
+            
+            let html = '<div class="distribution-bar">';
+            const grandTotal = counts.oxygen + counts.glucose + counts.amino || 1;
+            for (const [type, count] of Object.entries(counts)) {
+                const pct = (count / grandTotal) * 100;
+                if (pct > 0) {
+                    html += `<div class="distribution-segment" style="width: ${pct}%; background: ${colors[type]}">${pct > 10 ? Math.round(pct) + '%' : ''}</div>`;
+                }
+            }
+            html += '</div><div class="distribution-legend">';
+            for (const [type, count] of Object.entries(counts)) {
+                const pct = Math.round((count / total) * 100);
+                html += `<div class="distribution-legend-item">
+                    <div class="distribution-legend-dot" style="background: ${colors[type]}"></div>
+                    <span>${labels[type]}: ${count} (${pct}%)</span>
+                </div>`;
+            }
+            html += '</div>';
+            
+            container.innerHTML = html;
+        }
+
+        function renderTopOrganisms() {
+            // Combine living and dead organisms for analysis
+            const allOrganisms = [
+                ...organisms.map(o => ({
+                    age: o.age,
+                    generation: o.generation,
+                    offspringCount: o.offspringCount,
+                    foodEaten: o.foodEaten,
+                    traits: o.traits,
+                    color: o.traits.color,
+                    alive: true
+                })),
+                ...stats.deadArchive.map(o => ({ ...o, alive: false }))
+            ];
+            
+            // Longest lived
+            const longestLived = [...allOrganisms]
+                .sort((a, b) => b.age - a.age)
+                .slice(0, 5);
+            
+            const longestList = document.getElementById('longestLivedList');
+            if (longestLived.length === 0 || longestLived[0].age < 1) {
+                longestList.innerHTML = '<div class="no-data-message">No significant data yet</div>';
+            } else {
+                longestList.innerHTML = longestLived.map((org, i) => `
+                    <div class="top-organism-item">
+                        <div class="organism-rank">#${i + 1}</div>
+                        <div class="organism-color-dot" style="background: rgb(${org.color.r}, ${org.color.g}, ${org.color.b})"></div>
+                        <div class="organism-details">
+                            <div class="organism-stat-name">Lived ${(org.age / 60).toFixed(1)}s ${org.alive ? '(alive)' : ''}</div>
+                            <div class="organism-stat-value">Gen ${org.generation} | ${org.traits.movementType} | ${org.offspringCount} offspring</div>
+                        </div>
+                    </div>
+                `).join('');
+            }
+            
+            // Most offspring
+            const mostOffspring = [...allOrganisms]
+                .sort((a, b) => b.offspringCount - a.offspringCount)
+                .slice(0, 5);
+            
+            const offspringList = document.getElementById('mostOffspringList');
+            if (mostOffspring.length === 0 || mostOffspring[0].offspringCount === 0) {
+                offspringList.innerHTML = '<div class="no-data-message">No reproductions yet</div>';
+            } else {
+                offspringList.innerHTML = mostOffspring.map((org, i) => `
+                    <div class="top-organism-item">
+                        <div class="organism-rank">#${i + 1}</div>
+                        <div class="organism-color-dot" style="background: rgb(${org.color.r}, ${org.color.g}, ${org.color.b})"></div>
+                        <div class="organism-details">
+                            <div class="organism-stat-name">${org.offspringCount} offspring ${org.alive ? '(alive)' : ''}</div>
+                            <div class="organism-stat-value">Gen ${org.generation} | ${org.traits.movementType} | ${org.foodEaten} food eaten</div>
+                        </div>
+                    </div>
+                `).join('');
+            }
+        }
+
+        function renderTraitsChart() {
+            const canvas = document.getElementById('traitsChart');
+            const ctx = canvas.getContext('2d');
+            
+            canvas.width = canvas.parentElement.clientWidth - 20;
+            canvas.height = canvas.parentElement.clientHeight - 20;
+            
+            const w = canvas.width;
+            const h = canvas.height;
+            const padding = 40;
+            
+            ctx.clearRect(0, 0, w, h);
+            
+            const speeds = stats.history.avgSpeed;
+            const sizes = stats.history.avgSize;
+            const timestamps = stats.history.timestamps;
+            
+            if (speeds.length < 2) {
+                ctx.fillStyle = 'rgba(192, 224, 208, 0.5)';
+                ctx.font = '14px Rajdhani';
+                ctx.textAlign = 'center';
+                ctx.fillText('Not enough data yet...', w / 2, h / 2);
+                return;
+            }
+            
+            const maxSpeed = Math.max(...speeds.filter(s => s > 0), 1);
+            const maxSize = Math.max(...sizes.filter(s => s > 0), 1);
+            const minTime = timestamps[0];
+            const maxTime = timestamps[timestamps.length - 1];
+            
+            // Draw axes
+            ctx.strokeStyle = 'rgba(100, 200, 150, 0.3)';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(padding, padding);
+            ctx.lineTo(padding, h - padding);
+            ctx.lineTo(w - padding, h - padding);
+            ctx.stroke();
+            
+            // Draw speed line (normalized)
+            ctx.strokeStyle = '#ff9040';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            speeds.forEach((speed, i) => {
+                if (speed === 0) return;
+                const x = padding + (timestamps[i] - minTime) / (maxTime - minTime) * (w - 2 * padding);
+                const y = h - padding - (speed / maxSpeed) * (h - 2 * padding);
+                if (i === 0 || speeds[i-1] === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            });
+            ctx.stroke();
+            
+            // Draw size line (normalized)
+            ctx.strokeStyle = '#40c0ff';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            sizes.forEach((size, i) => {
+                if (size === 0) return;
+                const x = padding + (timestamps[i] - minTime) / (maxTime - minTime) * (w - 2 * padding);
+                const y = h - padding - (size / maxSize) * (h - 2 * padding);
+                if (i === 0 || sizes[i-1] === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            });
+            ctx.stroke();
+            
+            // Legend
+            ctx.font = '11px Rajdhani';
+            ctx.fillStyle = '#ff9040';
+            ctx.fillRect(w - 120, 10, 12, 12);
+            ctx.fillText('Avg Speed', w - 102, 20);
+            ctx.fillStyle = '#40c0ff';
+            ctx.fillRect(w - 120, 28, 12, 12);
+            ctx.fillText('Avg Size', w - 102, 38);
+        }
+
+        function renderGenerationChart() {
+            const canvas = document.getElementById('generationChart');
+            const ctx = canvas.getContext('2d');
+            
+            canvas.width = canvas.parentElement.clientWidth - 20;
+            canvas.height = canvas.parentElement.clientHeight - 20;
+            
+            const w = canvas.width;
+            const h = canvas.height;
+            const padding = 40;
+            
+            ctx.clearRect(0, 0, w, h);
+            
+            if (organisms.length === 0) {
+                ctx.fillStyle = 'rgba(192, 224, 208, 0.5)';
+                ctx.font = '14px Rajdhani';
+                ctx.textAlign = 'center';
+                ctx.fillText('No organisms alive', w / 2, h / 2);
+                return;
+            }
+            
+            // Count generations
+            const genCounts = {};
+            organisms.forEach(org => {
+                genCounts[org.generation] = (genCounts[org.generation] || 0) + 1;
+            });
+            
+            const generations = Object.keys(genCounts).map(Number).sort((a, b) => a - b);
+            const maxCount = Math.max(...Object.values(genCounts));
+            
+            if (generations.length === 0) return;
+            
+            const barWidth = Math.min(30, (w - 2 * padding) / generations.length - 5);
+            const totalWidth = generations.length * (barWidth + 5);
+            const startX = (w - totalWidth) / 2;
+            
+            // Draw bars
+            generations.forEach((gen, i) => {
+                const count = genCounts[gen];
+                const barHeight = (count / maxCount) * (h - 2 * padding - 20);
+                const x = startX + i * (barWidth + 5);
+                const y = h - padding - barHeight;
+                
+                // Bar gradient
+                const gradient = ctx.createLinearGradient(x, y, x, h - padding);
+                gradient.addColorStop(0, '#40e0a0');
+                gradient.addColorStop(1, '#20a070');
+                
+                ctx.fillStyle = gradient;
+                ctx.fillRect(x, y, barWidth, barHeight);
+                
+                // Generation label
+                ctx.fillStyle = 'rgba(192, 224, 208, 0.8)';
+                ctx.font = '10px Orbitron';
+                ctx.textAlign = 'center';
+                ctx.fillText(gen, x + barWidth / 2, h - padding + 15);
+                
+                // Count label
+                ctx.fillStyle = '#60ffc0';
+                ctx.fillText(count, x + barWidth / 2, y - 5);
+            });
+            
+            // X-axis label
+            ctx.fillStyle = 'rgba(192, 224, 208, 0.6)';
+            ctx.font = '10px Rajdhani';
+            ctx.textAlign = 'center';
+            ctx.fillText('Generation', w / 2, h - 5);
+        }
+
+        function renderSizeSpeedChart() {
+            const canvas = document.getElementById('sizeSpeedChart');
+            const ctx = canvas.getContext('2d');
+            
+            canvas.width = canvas.parentElement.clientWidth - 20;
+            canvas.height = canvas.parentElement.clientHeight - 20;
+            
+            const w = canvas.width;
+            const h = canvas.height;
+            const padding = 40;
+            
+            ctx.clearRect(0, 0, w, h);
+            
+            if (organisms.length === 0) {
+                ctx.fillStyle = 'rgba(192, 224, 208, 0.5)';
+                ctx.font = '14px Rajdhani';
+                ctx.textAlign = 'center';
+                ctx.fillText('No organisms alive', w / 2, h / 2);
+                return;
+            }
+            
+            const minSize = 8, maxSize = 25;
+            const minSpeed = 0.2, maxSpeed = 2;
+            
+            // Draw axes
+            ctx.strokeStyle = 'rgba(100, 200, 150, 0.3)';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(padding, padding);
+            ctx.lineTo(padding, h - padding);
+            ctx.lineTo(w - padding, h - padding);
+            ctx.stroke();
+            
+            // Axis labels
+            ctx.fillStyle = 'rgba(192, 224, 208, 0.6)';
+            ctx.font = '10px Rajdhani';
+            ctx.textAlign = 'center';
+            ctx.fillText('Size →', w / 2, h - 5);
+            
+            ctx.save();
+            ctx.translate(10, h / 2);
+            ctx.rotate(-Math.PI / 2);
+            ctx.fillText('Speed →', 0, 0);
+            ctx.restore();
+            
+            // Plot organisms
+            organisms.forEach(org => {
+                const x = padding + ((org.traits.size - minSize) / (maxSize - minSize)) * (w - 2 * padding);
+                const y = h - padding - ((org.traits.baseSpeed - minSpeed) / (maxSpeed - minSpeed)) * (h - 2 * padding);
+                
+                // Draw point with organism's color
+                ctx.beginPath();
+                ctx.arc(x, y, 5, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(${org.traits.color.r}, ${org.traits.color.g}, ${org.traits.color.b}, 0.7)`;
+                ctx.fill();
+                ctx.strokeStyle = `rgba(${org.traits.color.r}, ${org.traits.color.g}, ${org.traits.color.b}, 1)`;
+                ctx.lineWidth = 1;
+                ctx.stroke();
+            });
+        }
+
+        function renderTraitAverages() {
+            const container = document.getElementById('traitAverages');
+            
+            if (organisms.length === 0) {
+                container.innerHTML = '<div class="no-data-message">No organisms alive</div>';
+                return;
+            }
+            
+            // Calculate averages
+            const avgSize = organisms.reduce((s, o) => s + o.traits.size, 0) / organisms.length;
+            const avgSpeed = organisms.reduce((s, o) => s + o.traits.baseSpeed, 0) / organisms.length;
+            const avgMetabolicRate = organisms.reduce((s, o) => s + o.traits.metabolicRate, 0) / organisms.length;
+            const avgSensorRange = organisms.reduce((s, o) => s + o.traits.sensorRange, 0) / organisms.length;
+            const avgReproThreshold = organisms.reduce((s, o) => s + o.traits.reproductionThreshold, 0) / organisms.length;
+            const avgMutationTendency = organisms.reduce((s, o) => s + o.traits.mutationTendency, 0) / organisms.length;
+            
+            const traits = [
+                { name: 'Size', value: avgSize, min: 8, max: 25, color: '#40c0ff' },
+                { name: 'Speed', value: avgSpeed, min: 0.2, max: 2, color: '#ff9040' },
+                { name: 'Metabolic Rate', value: avgMetabolicRate, min: 0.3, max: 1.2, color: '#ffc040' },
+                { name: 'Sensor Range', value: avgSensorRange, min: 30, max: 120, color: '#c040ff' },
+                { name: 'Repro. Threshold', value: avgReproThreshold, min: 60, max: 150, color: '#ff4080' },
+                { name: 'Mutation Tendency', value: avgMutationTendency, min: 0.01, max: 0.15, color: '#40ffc0' }
+            ];
+            
+            let html = '<div class="trait-avg-grid">';
+            traits.forEach(trait => {
+                const pct = ((trait.value - trait.min) / (trait.max - trait.min)) * 100;
+                const displayValue = trait.value < 1 ? trait.value.toFixed(2) : trait.value.toFixed(1);
+                html += `
+                    <div class="trait-avg-item">
+                        <div class="trait-avg-header">
+                            <span class="trait-avg-name">${trait.name}</span>
+                            <span class="trait-avg-value">${displayValue}</span>
+                        </div>
+                        <div class="trait-avg-bar-bg">
+                            <div class="trait-avg-bar-fill" style="width: ${Math.min(100, Math.max(0, pct))}%; background: ${trait.color}"></div>
+                        </div>
+                    </div>
+                `;
+            });
+            html += '</div>';
+            
+            container.innerHTML = html;
+        }
 
         // ============================================
         // START

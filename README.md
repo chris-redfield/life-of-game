@@ -312,6 +312,19 @@ Three types of food particles exist in the simulation:
 - [x] Energy bar per organism
 - [x] Ambient particle overlay
 - [x] Dark, primordial aesthetic
+- [x] Lake/pond background gradient
+
+### Statistics & Analytics
+- [x] Population timeline chart
+- [x] Birth/death rate chart over time
+- [x] Movement type distribution
+- [x] Metabolism distribution
+- [x] Top 5 longest-lived organisms
+- [x] Top 5 most offspring producers
+- [x] Average traits evolution chart
+- [x] Generation distribution histogram
+- [x] Size vs Speed scatter plot
+- [x] Real-time trait averages comparison
 
 ---
 
@@ -329,6 +342,7 @@ Three types of food particles exist in the simulation:
 | Mutation Rate slider | Global mutation modifier (1% - 20%) |
 | ⏸ button | Pause/resume simulation |
 | 1x / 2x / 4x buttons | Simulation speed |
+| 📊 View Statistics | Open stats overlay with charts and analytics |
 | + Add 10 Organisms | Spawn 10 random organisms |
 | + Add Food Burst | Spawn extra food of all types |
 | Reset Simulation | Clear everything and restart |
