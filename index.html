@@ -488,6 +488,10 @@
             height: 200px;
         }
 
+        .chart-container.medium-tall {
+            height: 240px;
+        }
+
         .top-organisms-list {
             display: flex;
             flex-direction: column;
@@ -726,14 +730,14 @@
                     
                     <div class="stats-card">
                         <div class="stats-card-title">🧬 Generation Distribution</div>
-                        <div class="chart-container">
+                        <div class="chart-container medium-tall">
                             <canvas id="generationChart"></canvas>
                         </div>
                     </div>
                     
                     <div class="stats-card">
                         <div class="stats-card-title">⚡ Size vs Speed</div>
-                        <div class="chart-container">
+                        <div class="chart-container medium-tall">
                             <canvas id="sizeSpeedChart"></canvas>
                         </div>
                     </div>
@@ -1731,8 +1735,12 @@
             const total = organisms.length || 1;
             const species = Object.entries(speciesCount).sort((a, b) => b[1] - a[1]);
             
+            // Show top 5 species + "others" category
+            const top5 = species.slice(0, 5);
+            const othersCount = species.slice(5).reduce((sum, [_, count]) => sum + count, 0);
+            
             let offset = 0;
-            species.slice(0, 5).forEach(([sig, count], i) => {
+            top5.forEach(([sig, count], i) => {
                 const width = (count / total) * 100;
                 const org = organisms.find(o => o.dna.getSpeciesSignature() === sig);
                 const color = org ? org.traits.color : { r: 128, g: 128, b: 128 };
@@ -1743,7 +1751,7 @@
                     left: ${offset}%;
                     width: ${width}%;
                     height: 100%;
-                    background: rgba(${color.r}, ${color.g}, ${color.b}, 0.6);
+                    background: rgba(${color.r}, ${color.g}, ${color.b}, 0.7);
                     transition: all 0.3s;
                 `;
                 bar.appendChild(segment);
@@ -1758,6 +1766,29 @@
                 
                 offset += width;
             });
+            
+            // Add "others" segment if there are more species
+            if (othersCount > 0) {
+                const width = (othersCount / total) * 100;
+                const segment = document.createElement('div');
+                segment.style.cssText = `
+                    position: absolute;
+                    left: ${offset}%;
+                    width: ${width}%;
+                    height: 100%;
+                    background: rgba(100, 100, 100, 0.5);
+                    transition: all 0.3s;
+                `;
+                bar.appendChild(segment);
+                
+                const legendItem = document.createElement('div');
+                legendItem.className = 'legend-item';
+                legendItem.innerHTML = `
+                    <div class="legend-dot" style="background: rgb(100, 100, 100)"></div>
+                    <span>${othersCount}</span>
+                `;
+                legend.appendChild(legendItem);
+            }
         }
 
         function updateOrganismInfo() {
