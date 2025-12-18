@@ -5,7 +5,7 @@
 > *Working title: "Primordial Soup" (potential future rebrand)*
 
 ![Status](https://img.shields.io/badge/status-MVP-green)
-![Version](https://img.shields.io/badge/version-0.1.0-blue)
+![Version](https://img.shields.io/badge/version-0.2.0-blue)
 
 ## Overview
 
@@ -16,12 +16,14 @@
 - **Metabolism** - organisms must eat to survive
 - **Reproduction with mutation** - evolution happens naturally
 - **Emergent species** - populations diverge into distinct species over time
+- **Trade-offs** - no "perfect" organism; every advantage has a cost
 
 ## Table of Contents
 
 - [Getting Started](#getting-started)
 - [Core Concepts](#core-concepts)
 - [DNA & Genetics System](#dna--genetics-system)
+- [Trade-offs System](#trade-offs-system)
 - [Organism Life Cycle](#organism-life-cycle)
 - [Food System](#food-system)
 - [Features List](#features-list)
@@ -32,11 +34,11 @@
 
 ## Getting Started
 
-Simply open `index.html` in any modern browser. No dependencies or build process required.
+Simply open `life-of-game.html` in any modern browser. No dependencies or build process required.
 
 ```bash
 # Clone or download, then:
-open index.html
+open life-of-game.html
 # or
 python -m http.server 8000  # then visit localhost:8000
 ```
@@ -53,6 +55,7 @@ Unlike Conway's Game of Life where cells follow deterministic rules based on nei
 2. **Have identity** - Each organism has unique DNA determining its traits
 3. **Evolve** - Mutations accumulate over generations, creating new species
 4. **Compete** - Resources are limited; better-adapted organisms thrive
+5. **Face trade-offs** - Being fast costs more energy, being big makes you slower
 
 ### Inspiration vs. Implementation
 
@@ -63,6 +66,7 @@ Unlike Conway's Game of Life where cells follow deterministic rules based on nei
 | Patterns are discovered | Species evolve |
 | No resources | Must acquire energy to survive |
 | Instant state changes | Life cycle (birth → life → reproduction → death) |
+| No trade-offs | Every advantage has a cost |
 
 ---
 
@@ -93,85 +97,177 @@ DNA
 #### Chromosome 0: Physical Traits
 | Gene Range | Trait | Output Range |
 |------------|-------|--------------|
-| 0-19 | Size | 8-25 pixels |
-| 20-39 | Membrane Thickness | 0.5-3.0 |
-| 40-59 | Elasticity | 0.3-1.0 |
+| 0-19 | Size | **5-40 pixels** |
+| 20-39 | Membrane Thickness | 0.5-4.0 |
+| 40-59 | Elasticity | 0.2-1.2 |
 
 #### Chromosome 1: Movement
 | Gene Range | Trait | Output Range |
 |------------|-------|--------------|
-| 0-24 | Movement Type | none / cilia / flagellum / pseudopod |
-| 25-49 | Base Speed | 0.2-2.0 |
-| 50-74 | Turn Rate | 0.02-0.15 |
-| 75-99 | Movement Efficiency | 0.5-1.5 |
+| Gene 0 (single) | Movement Type | none / cilia / flagellum / pseudopod |
+| 25-49 | Genetic Speed | **0.1-4.0** |
+| 50-74 | Turn Rate | 0.01-0.25 |
+| 75-99 | Movement Efficiency | 0.3-2.0 |
+
+*Note: Actual speed = Genetic Speed × Size Penalty (see Trade-offs)*
 
 #### Chromosome 2: Metabolism
 | Gene Range | Trait | Output Range |
 |------------|-------|--------------|
-| 0-24 | Can Eat Oxygen | Yes if avg > 100 |
-| 25-49 | Can Eat Glucose | Yes if avg > 128 |
-| 50-74 | Can Eat Amino Acids | Yes if avg > 180 |
-| 75-99 | Metabolic Rate | 0.3-1.2 |
+| Gene 0 (single) | Can Eat Oxygen | Yes if > 100 |
+| Gene 25 (single) | Can Eat Glucose | Yes if > 128 |
+| Gene 50 (single) | Can Eat Amino Acids | Yes if > 180 |
+| 75-99 | Metabolic Rate | **0.2-2.0** |
+
+*Note: Specialist bonus applies based on how many food types organism can eat (see Trade-offs)*
 
 #### Chromosome 3: Reproduction
 | Gene Range | Trait | Output Range |
 |------------|-------|--------------|
-| 0-32 | Reproduction Threshold | 60-150 energy |
-| 33-65 | Offspring Energy Share | 30-50% |
-| 66-99 | Mutation Tendency | 1-15% |
+| 0-32 | Reproduction Threshold | **40-200 energy** |
+| 33-65 | Offspring Energy Share | 25-55% |
+| 66-99 | Mutation Tendency | **1-20%** |
 
 #### Chromosome 4: Sensory/Behavior
 | Gene Range | Trait | Output Range |
 |------------|-------|--------------|
-| 0-32 | Sensor Range | 30-120 pixels |
+| 0-32 | Sensor Range | **15-250 pixels** |
 | 33-65 | Food Preference | 0-1 (bias) |
-| 66-99 | Flocking Tendency | 0-0.5 |
+| 66-99 | Flocking Tendency | 0-0.8 |
 
 ### Gene-to-Trait Mapping
 
-Genes are decoded using **range averaging**:
+Traits are decoded using **2-gene averaging** for balance between stability and mutation sensitivity:
 
 ```javascript
-// Example: Getting organism size from Chromosome 0, genes 0-19
-const geneAverage = chromosome0.slice(0, 20).reduce((a,b) => a+b) / 20;
-const size = mapRange(geneAverage, 0, 255, 8, 25);
+// Example: Getting organism size from Chromosome 0
+// Uses 2 key genes (start and middle of range)
+const gene1 = chromosome0[0];   // First gene of range
+const gene2 = chromosome0[10];  // Middle gene of range
+const geneAverage = (gene1 + gene2) / 2;
+const size = mapRange(geneAverage, 0, 255, 5, 40);
 ```
 
-For categorical traits (like movement type):
+**Why 2 genes?** 
+- 1 gene = too jumpy (single mutation causes huge change)
+- 3+ genes = too stable (mutations barely visible)
+- 2 genes = balanced (mutation affects 50% of trait value)
+
+For **categorical traits** (movement type, can eat X), single genes are used so mutations can flip categories:
 
 ```javascript
-// Movement type from Chromosome 1, genes 0-24
-const avg = getGeneRange(1, 0, 25);  // 0-255
-const typeIndex = Math.floor(avg / 64);  // 0, 1, 2, or 3
+// Movement type from single gene
+const typeIndex = Math.floor(chromosome1[0] / 64);  // 0, 1, 2, or 3
 const movementType = ['none', 'cilia', 'flagellum', 'pseudopod'][typeIndex];
 ```
 
 ### Color as Species Indicator
 
-Organism color is derived from **Chromosome 2 (Metabolism)**:
+Organism color is derived from genes across **3 chromosomes** for visual diversity:
 
 ```javascript
-const r = averageOf(chromosome2, 0, 33);
-const g = averageOf(chromosome2, 33, 66);
-const b = averageOf(chromosome2, 66, 100);
+const r = chromosome0[10];  // Physical
+const g = chromosome1[10];  // Movement
+const b = chromosome2[10];  // Metabolism
 ```
 
-This means organisms with similar metabolisms appear as similar colors, creating **visual species clustering**.
+This creates visible species clustering - similar organisms have similar colors.
 
-### Mutation
+### Mutation System
 
-During reproduction, each gene has a chance to mutate:
+During reproduction, each of the 500 genes has a chance to mutate:
 
 ```javascript
+// Mutation rate = global setting + organism's mutation tendency
+// Example: 8% (slider) + 10% (genes) = 18% chance per gene
+const mutationRate = globalMutationRate + organism.mutationTendency;
+
 if (Math.random() < mutationRate) {
-    const change = randomInt(-15, 15);
-    gene = clamp(gene + change, 0, 255);
+    // 90% chance: gradual mutation (±50)
+    if (Math.random() > 0.1) {
+        gene += randomInt(-50, 50);
+    } 
+    // 10% chance: jump mutation (completely new value)
+    else {
+        gene = randomInt(0, 255);
+    }
 }
 ```
 
-- Mutations are **small** (±15 max)
-- Mutation rate is influenced by both **global setting** and **organism's own mutation tendency gene**
-- Over generations, mutations accumulate → species diverge
+**Mutation features:**
+- **Large mutations** (±50) for visible changes
+- **Jump mutations** (10% of mutations) can create completely new trait values
+- **Additive rate** - organism's mutation tendency adds to global rate
+- At 18% rate with 500 genes: **~90 genes mutate per reproduction**
+
+---
+
+## Trade-offs System
+
+The simulation enforces trade-offs so no single strategy dominates:
+
+### 1. Size → Speed Penalty
+
+Large organisms are slower (like in real life):
+
+| Size | Speed Multiplier |
+|------|------------------|
+| 5 (tiny) | 100% |
+| 22.5 (medium) | 70% |
+| 40 (huge) | 40% |
+
+```
+Actual Speed = Genetic Speed × Size Penalty
+
+Example: Genetic speed 3.0, Size 30
+Penalty = 0.54 (54%)
+Actual speed = 3.0 × 0.54 = 1.62
+```
+
+### 2. Speed → Energy Cost (×1.5)
+
+Fast organisms burn energy 1.5× faster:
+
+```
+Movement energy cost = baseSpeed × 0.012 × 1.5
+```
+
+A speed-4.0 organism burns energy ~3× faster than a speed-1.0 organism.
+
+### 3. Sensor Range → Energy Drain
+
+Good sensors cost a small amount of energy:
+
+```
+Sensor drain = sensorRange × 0.00004
+```
+
+At max range (250): ~0.01 energy/tick (small but adds up)
+
+### 4. Specialist Bonus
+
+Organisms that can eat fewer food types are MORE efficient at eating:
+
+| Can Eat | Bonus |
+|---------|-------|
+| 1 type (specialist) | **1.8×** energy gain |
+| 2 types | **1.3×** energy gain |
+| 3 types (generalist) | **1.0×** energy gain |
+
+This creates viable strategies:
+- **Oxygen specialist**: Can only eat O₂, but gets 1.8× energy from it
+- **Generalist**: Can eat everything, but gets base energy
+
+### Viable Strategies
+
+These trade-offs enable multiple winning strategies:
+
+| Strategy | Size | Speed | Diet | Pros | Cons |
+|----------|------|-------|------|------|------|
+| **Tank** | Large | Slow | O₂ specialist | High energy efficiency, survives on ambient oxygen | Can't chase rare food |
+| **Hunter** | Small | Fast | Glucose/Amino specialist | Catches rare high-energy food | Burns energy quickly |
+| **Balanced** | Medium | Medium | 2 types | Good at both | Master of none |
+| **Opportunist** | Small | Medium | Generalist | Can eat anything | Lower efficiency |
 
 ---
 
@@ -198,28 +294,28 @@ if (Math.random() < mutationRate) {
 - Traits are decoded from DNA immediately
 
 ### Living
-- **Energy drain**: Constant drain based on size and metabolic rate
-- **Movement cost**: Moving organisms spend extra energy
-- **Aging**: Age counter increases (currently cosmetic)
+- **Energy drain**: Constant drain based on size, speed, and sensors
+- **Movement cost**: Moving organisms spend extra energy (speed × 1.5)
+- **Aging**: Age counter increases
 
 ### Eating
 - Organism detects food within **sensor range**
 - Moves toward nearest **compatible** food (based on metabolism genes)
 - On contact, food is consumed:
-  - Energy gained = food.energy × metabolicRate
-  - **Bonus**: 1.5x energy if food matches primary food type
+  - Energy gained = food.energy × metabolicRate × specialistBonus
+  - **Primary food bonus**: +40% if food matches primary type
 
 ### Reproduction
 - Triggered when energy ≥ reproduction threshold
 - **Asexual division**: One parent, one child
 - Energy is split between parent and child
-- Child DNA = Parent DNA + mutations
+- Child DNA = Parent DNA + mutations (~90 genes change)
 - Child spawns adjacent to parent
 
 ### Death
 - When energy ≤ 0
 - Organism is removed from simulation
-- Death counter increments
+- Archived for statistics (top 100 dead organisms tracked)
 
 ---
 
@@ -237,7 +333,7 @@ Three types of food particles exist in the simulation:
 | Lifespan | 600 ticks |
 | Spawn rate | 3 per cycle |
 
-**Strategy**: Organisms that can eat oxygen don't need to move much - it's everywhere.
+**Strategy**: Slow, large specialists can survive purely on oxygen.
 
 ### Glucose (G)
 | Property | Value |
@@ -249,7 +345,7 @@ Three types of food particles exist in the simulation:
 | Lifespan | 400 ticks |
 | Spawn rate | 2 per cycle |
 
-**Strategy**: Good balance of availability and energy. Mobile organisms thrive on glucose.
+**Strategy**: Balanced option. Worth chasing for medium-speed organisms.
 
 ### Amino Acids (A)
 | Property | Value |
@@ -261,7 +357,7 @@ Three types of food particles exist in the simulation:
 | Lifespan | 300 ticks |
 | Spawn rate | 1 per cycle |
 
-**Strategy**: High risk, high reward. Only fast organisms with good sensors can reliably find amino acids.
+**Strategy**: High risk, high reward. Only fast organisms with good sensors benefit.
 
 ### Food Dynamics
 
@@ -274,23 +370,32 @@ Three types of food particles exist in the simulation:
 
 ## Features List
 
-### Currently Implemented (MVP)
+### Currently Implemented
 
 #### Organisms
 - [x] DNA with 5 chromosomes × 100 genes
-- [x] Trait decoding from genes
+- [x] 2-gene trait decoding (balanced mutation sensitivity)
+- [x] Single-gene categorical traits (movement type, diet)
 - [x] Four movement types (none, cilia, flagellum, pseudopod)
-- [x] Visual movement animations (flagellum wave, cilia wiggle, pseudopod ooze)
-- [x] Energy system with drain and consumption
+- [x] Visual movement animations
+- [x] Energy system with trade-off costs
 - [x] Food-seeking behavior with sensor range
-- [x] Asexual reproduction with mutation
-- [x] Visual species differentiation (color from metabolism)
+- [x] Asexual reproduction with significant mutation
+- [x] Jump mutations for occasional big changes
+- [x] Visual species differentiation (color from multiple chromosomes)
 - [x] Individual organism selection and inspection
+
+#### Trade-offs
+- [x] Size → Speed penalty (big = slow)
+- [x] Speed → Energy cost (×1.5)
+- [x] Sensor range → Energy drain
+- [x] Specialist bonus (fewer food types = more efficient)
 
 #### Environment
 - [x] Three food types (oxygen, glucose, amino acids)
 - [x] Food spawning and decay
 - [x] Boundary wrapping (toroidal world)
+- [x] Lake/pond background aesthetic
 
 #### UI/UX
 - [x] Real-time population statistics
@@ -299,6 +404,8 @@ Three types of food particles exist in the simulation:
 - [x] Food supply indicators
 - [x] Species distribution visualization
 - [x] Selected organism DNA/trait display
+- [x] Genetic vs Actual speed display
+- [x] Specialist bonus display
 - [x] Simulation speed controls (1x, 2x, 4x)
 - [x] Pause functionality
 - [x] Manual food burst
@@ -311,7 +418,6 @@ Three types of food particles exist in the simulation:
 - [x] Movement appendage rendering
 - [x] Energy bar per organism
 - [x] Ambient particle overlay
-- [x] Dark, primordial aesthetic
 - [x] Lake/pond background gradient
 
 ### Statistics & Analytics
@@ -325,6 +431,7 @@ Three types of food particles exist in the simulation:
 - [x] Generation distribution histogram
 - [x] Size vs Speed scatter plot
 - [x] Real-time trait averages comparison
+- [x] Genetic speed vs Actual speed tracking
 
 ---
 
@@ -339,13 +446,25 @@ Three types of food particles exist in the simulation:
 | Control | Function |
 |---------|----------|
 | Food Spawn Rate slider | Adjust how fast food appears (0.1x - 3x) |
-| Mutation Rate slider | Global mutation modifier (1% - 20%) |
+| Mutation Rate slider | Global mutation modifier (1% - 30%) |
 | ⏸ button | Pause/resume simulation |
 | 1x / 2x / 4x buttons | Simulation speed |
 | 📊 View Statistics | Open stats overlay with charts and analytics |
 | + Add 10 Organisms | Spawn 10 random organisms |
 | + Add Food Burst | Spawn extra food of all types |
 | Reset Simulation | Clear everything and restart |
+
+### Selected Organism Display
+
+When you click an organism, you see:
+- **Movement**: none / cilia / flagellum / pseudopod
+- **Speed**: `1.24 (gene: 2.50)` - actual speed and genetic speed
+- **Size**: Physical size in pixels
+- **Primary Food**: Preferred food type
+- **Can Eat**: `O₂ G (1.3x)` - what it can eat + specialist bonus
+- **Energy**: Current energy level
+- **Generation**: How many ancestors
+- **Sensor Range**: Detection radius
 
 ---
 
@@ -391,23 +510,48 @@ Three types of food particles exist in the simulation:
 ### Browser Support
 - Modern browsers (Chrome, Firefox, Safari, Edge)
 - No external dependencies
-- Single HTML file (~800 lines)
+- Single HTML file (~2500 lines)
 
 ### Code Structure
 ```
-index.html
+life-of-game.html
 ├── CSS (embedded)
-│   └── Dark bioluminescent theme
+│   ├── Lake/pond theme
+│   ├── Side panel styling
+│   └── Stats overlay styling
 ├── JavaScript (embedded)
-│   ├── DNA class
-│   ├── Organism class
-│   ├── Food class
+│   ├── DNA class (genetics, mutation, trait decoding)
+│   ├── Organism class (behavior, movement, reproduction)
+│   ├── Food class (spawning, decay)
+│   ├── Trade-offs system
 │   ├── Simulation loop
+│   ├── Statistics tracking & charts
 │   └── UI handlers
 └── HTML
     ├── Canvas (simulation area)
+    ├── Stats overlay
     └── Side panel (controls/stats)
 ```
+
+---
+
+## Changelog
+
+### v0.2.0 - Evolution Update
+- **Trade-offs system**: Size→speed penalty, speed energy cost ×1.5, sensor drain, specialist bonus
+- **Wider trait ranges**: Size 5-40, Speed 0.1-4.0, Sensors 15-250
+- **Fixed mutations**: 2-gene averaging, single genes for categories, ±50 mutations, 10% jump mutations
+- **Fixed mutation rate**: Now additive (global + tendency) instead of multiplicative
+- **UI improvements**: Shows genetic vs actual speed, specialist bonus multiplier
+- **Statistics overlay**: 10 different charts and analytics
+- **Visual**: Lake/pond background instead of black
+
+### v0.1.0 - Initial Release
+- Basic DNA system with 5 chromosomes
+- Four movement types
+- Three food types
+- Asexual reproduction
+- Basic UI and controls
 
 ---
 
@@ -419,6 +563,7 @@ Ideas and contributions welcome! Key areas:
 2. **Behaviors** - More complex organism decision-making
 3. **Visualization** - Better ways to show evolution happening
 4. **Performance** - Handle 1000+ organisms smoothly
+5. **Balance** - Tune trade-offs for interesting dynamics
 
 ---
 
@@ -436,4 +581,4 @@ MIT License - Feel free to use, modify, and distribute.
 
 ---
 
-*"In the beginning, there was chemistry. Then chemistry became biology. Then biology became... interesting."*
+*"In the beginning, there was chemistry. Then chemistry became biology. Then biology became... competitive."*
