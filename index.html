@@ -805,9 +805,9 @@
                 <div class="slider-group">
                     <div class="slider-label">
                         <span>Mutation Rate</span>
-                        <span class="slider-value" id="mutationRateValue">5%</span>
+                        <span class="slider-value" id="mutationRateValue">8%</span>
                     </div>
-                    <input type="range" id="mutationRate" min="1" max="20" step="1" value="5">
+                    <input type="range" id="mutationRate" min="1" max="30" step="1" value="8">
                 </div>
                 
                 <div class="speed-indicator">
@@ -894,42 +894,68 @@
                 }
             }
 
-            // Get average value of a gene range
+            // Get average value of a gene range (using 2 genes for balance between stability and mutation sensitivity)
             getGeneRange(chromosome, start, end) {
-                const genes = this.chromosomes[chromosome].slice(start, end);
-                return genes.reduce((a, b) => a + b, 0) / genes.length;
+                // Use 2 key genes from the range - middle ground between 1 (too jumpy) and 3+ (too stable)
+                const mid = Math.floor((start + end) / 2);
+                const gene1 = this.chromosomes[chromosome][start];
+                const gene2 = this.chromosomes[chromosome][mid];
+                return (gene1 + gene2) / 2;
             }
 
             // Decode traits from DNA
             decodeTraits() {
+                // Calculate how many food types this organism can eat (for specialist bonus)
+                const canOxygen = this.chromosomes[2][0] > 100;
+                const canGlucose = this.chromosomes[2][25] > 128;
+                const canAmino = this.chromosomes[2][50] > 180;
+                const foodTypesCount = (canOxygen ? 1 : 0) + (canGlucose ? 1 : 0) + (canAmino ? 1 : 0);
+                
+                // Specialist bonus: eating fewer food types = more efficient at those
+                // 1 food type = 1.8x, 2 food types = 1.3x, 3 food types = 1.0x
+                const specialistBonus = foodTypesCount === 1 ? 1.8 : (foodTypesCount === 2 ? 1.3 : 1.0);
+                
+                // Get base size (wider range: 5-40 instead of 8-25)
+                const baseSize = this.mapRange(this.getGeneRange(0, 0, 20), 0, 255, 5, 40);
+                
+                // Get genetic speed (wider range: 0.1-4.0 instead of 0.2-2)
+                const geneticSpeed = this.mapRange(this.getGeneRange(1, 25, 50), 0, 255, 0.1, 4.0);
+                
+                // Large size = slower (size penalty on speed)
+                // At size 5: 1.0x speed, at size 40: 0.4x speed
+                const sizeSpeedPenalty = this.mapRange(baseSize, 5, 40, 1.0, 0.4);
+                
                 return {
-                    // Physical (Chromosome 0)
-                    size: this.mapRange(this.getGeneRange(0, 0, 20), 0, 255, 8, 25),
-                    membraneThickness: this.mapRange(this.getGeneRange(0, 20, 40), 0, 255, 0.5, 3),
-                    elasticity: this.mapRange(this.getGeneRange(0, 40, 60), 0, 255, 0.3, 1),
+                    // Physical (Chromosome 0) - wider ranges
+                    size: baseSize,
+                    membraneThickness: this.mapRange(this.getGeneRange(0, 20, 40), 0, 255, 0.5, 4),
+                    elasticity: this.mapRange(this.getGeneRange(0, 40, 60), 0, 255, 0.2, 1.2),
                     
-                    // Movement (Chromosome 1)
-                    movementType: MOVEMENT_TYPES[Math.floor(this.getGeneRange(1, 0, 25) / 64)],
-                    baseSpeed: this.mapRange(this.getGeneRange(1, 25, 50), 0, 255, 0.2, 2),
-                    turnRate: this.mapRange(this.getGeneRange(1, 50, 75), 0, 255, 0.02, 0.15),
-                    movementEfficiency: this.mapRange(this.getGeneRange(1, 75, 100), 0, 255, 0.5, 1.5),
+                    // Movement (Chromosome 1) - speed affected by size
+                    movementType: MOVEMENT_TYPES[Math.floor(this.chromosomes[1][0] / 64)],
+                    geneticSpeed: geneticSpeed,  // Raw genetic speed
+                    baseSpeed: geneticSpeed * sizeSpeedPenalty,  // Actual speed after size penalty
+                    turnRate: this.mapRange(this.getGeneRange(1, 50, 75), 0, 255, 0.01, 0.25),
+                    movementEfficiency: this.mapRange(this.getGeneRange(1, 75, 100), 0, 255, 0.3, 2.0),
                     
                     // Metabolism (Chromosome 2)
                     primaryFood: this.getPrimaryFood(),
-                    canEatOxygen: this.getGeneRange(2, 0, 25) > 100,
-                    canEatGlucose: this.getGeneRange(2, 25, 50) > 128,
-                    canEatAmino: this.getGeneRange(2, 50, 75) > 180,
-                    metabolicRate: this.mapRange(this.getGeneRange(2, 75, 100), 0, 255, 0.3, 1.2),
+                    canEatOxygen: canOxygen,
+                    canEatGlucose: canGlucose,
+                    canEatAmino: canAmino,
+                    foodTypesCount: foodTypesCount,
+                    specialistBonus: specialistBonus,
+                    metabolicRate: this.mapRange(this.getGeneRange(2, 75, 100), 0, 255, 0.2, 2.0),
                     
-                    // Reproduction (Chromosome 3)
-                    reproductionThreshold: this.mapRange(this.getGeneRange(3, 0, 33), 0, 255, 60, 150),
-                    offspringEnergy: this.mapRange(this.getGeneRange(3, 33, 66), 0, 255, 0.3, 0.5),
-                    mutationTendency: this.mapRange(this.getGeneRange(3, 66, 100), 0, 255, 0.01, 0.15),
+                    // Reproduction (Chromosome 3) - wider ranges
+                    reproductionThreshold: this.mapRange(this.getGeneRange(3, 0, 33), 0, 255, 40, 200),
+                    offspringEnergy: this.mapRange(this.getGeneRange(3, 33, 66), 0, 255, 0.25, 0.55),
+                    mutationTendency: this.mapRange(this.getGeneRange(3, 66, 100), 0, 255, 0.01, 0.20),
                     
-                    // Sensory (Chromosome 4)
-                    sensorRange: this.mapRange(this.getGeneRange(4, 0, 33), 0, 255, 30, 120),
+                    // Sensory (Chromosome 4) - much wider range
+                    sensorRange: this.mapRange(this.getGeneRange(4, 0, 33), 0, 255, 15, 250),
                     foodPreference: this.mapRange(this.getGeneRange(4, 33, 66), 0, 255, 0, 1),
-                    flockingTendency: this.mapRange(this.getGeneRange(4, 66, 100), 0, 255, 0, 0.5),
+                    flockingTendency: this.mapRange(this.getGeneRange(4, 66, 100), 0, 255, 0, 0.8),
 
                     // Computed color from DNA
                     color: this.computeColor()
@@ -937,9 +963,10 @@
             }
 
             getPrimaryFood() {
-                const o = this.getGeneRange(2, 0, 25);
-                const g = this.getGeneRange(2, 25, 50);
-                const a = this.getGeneRange(2, 50, 75);
+                // Use single genes for clearer differentiation
+                const o = this.chromosomes[2][0];
+                const g = this.chromosomes[2][25];
+                const a = this.chromosomes[2][50];
                 
                 if (o >= g && o >= a) return 'oxygen';
                 if (g >= o && g >= a) return 'glucose';
@@ -947,19 +974,19 @@
             }
 
             computeColor() {
-                // Color is derived from metabolism genes - creates visual species
-                const r = Math.floor(this.getGeneRange(2, 0, 33));
-                const g = Math.floor(this.getGeneRange(2, 33, 66));
-                const b = Math.floor(this.getGeneRange(2, 66, 100));
+                // Color derived from key genes across different chromosomes for diversity
+                const r = this.chromosomes[0][10];  // From physical
+                const g = this.chromosomes[1][10];  // From movement  
+                const b = this.chromosomes[2][10];  // From metabolism
                 
                 // Normalize to brighter colors
                 const max = Math.max(r, g, b, 1);
-                const factor = 200 / max;
+                const factor = 180 / max;
                 
                 return {
-                    r: Math.min(255, Math.floor(r * factor) + 55),
-                    g: Math.min(255, Math.floor(g * factor) + 55),
-                    b: Math.min(255, Math.floor(b * factor) + 55)
+                    r: Math.min(255, Math.floor(r * factor) + 60),
+                    g: Math.min(255, Math.floor(g * factor) + 60),
+                    b: Math.min(255, Math.floor(b * factor) + 60)
                 };
             }
 
@@ -972,8 +999,12 @@
                 const newChromosomes = this.chromosomes.map(chromosome => {
                     return chromosome.map(gene => {
                         if (Math.random() < mutationRate) {
-                            // Mutation: small change
-                            const change = Math.floor(Math.random() * 30) - 15;
+                            // 10% chance of "jump mutation" - completely new value
+                            if (Math.random() < 0.1) {
+                                return Math.floor(Math.random() * 256);
+                            }
+                            // Normal mutation: larger change (±50 instead of ±15)
+                            const change = Math.floor(Math.random() * 100) - 50;
                             return Math.max(0, Math.min(255, gene + change));
                         }
                         return gene;
@@ -1031,15 +1062,22 @@
                 this.age += deltaTime;
                 this.pulsePhase += deltaTime * 3;
                 
-                // Energy consumption based on size and movement
-                let energyCost = 0.02 * this.traits.metabolicRate * (this.size / 15);
+                // === ENERGY COSTS WITH TRADE-OFFS ===
                 
-                // Movement
+                // Base cost: metabolism × size (bigger = hungrier)
+                let energyCost = 0.015 * this.traits.metabolicRate * (this.size / 20);
+                
+                // Sensor drain: good sensors cost energy (small but exists)
+                // At sensorRange 15: ~0, at sensorRange 250: ~0.008
+                energyCost += 0.00004 * this.traits.sensorRange;
+                
+                // Movement cost: speed × 1.5 multiplier (fast is expensive!)
                 if (this.traits.movementType !== 'none') {
                     this.move(foods, organisms);
-                    energyCost += 0.01 * this.traits.baseSpeed;
+                    // Speed costs 1.5x energy
+                    energyCost += 0.012 * this.traits.baseSpeed * 1.5;
                 } else {
-                    // Passive drift
+                    // Passive drift - very cheap
                     this.x += (Math.random() - 0.5) * 0.3;
                     this.y += (Math.random() - 0.5) * 0.3;
                 }
@@ -1130,9 +1168,14 @@
                     // Energy gained depends on food type and metabolism
                     let energyGain = food.energy;
                     
+                    // Primary food bonus
                     if (food.type === this.traits.primaryFood) {
-                        energyGain *= 1.5; // Bonus for primary food
+                        energyGain *= 1.4;
                     }
+                    
+                    // SPECIALIST BONUS: fewer food types = more efficient
+                    // 1 type: 1.8x, 2 types: 1.3x, 3 types: 1.0x
+                    energyGain *= this.traits.specialistBonus;
                     
                     energyGain *= this.traits.metabolicRate;
                     this.energy += energyGain;
@@ -1151,7 +1194,9 @@
             reproduce(globalMutationRate) {
                 if (!this.canReproduce()) return null;
                 
-                const mutationRate = this.traits.mutationTendency * globalMutationRate;
+                // Mutation rate = base rate + organism's tendency (not multiplied!)
+                // This ensures mutations actually happen
+                const mutationRate = globalMutationRate + this.traits.mutationTendency;
                 const childDNA = this.dna.reproduce(mutationRate);
                 
                 // Split energy
@@ -1424,7 +1469,7 @@
 
         let settings = {
             foodSpawnRate: 1,
-            mutationRate: 0.05,
+            mutationRate: 0.08,
             speed: 1,
             paused: false
         };
@@ -1750,7 +1795,7 @@
                 </div>
                 <div class="trait-item">
                     <span class="trait-name">Speed</span>
-                    <span class="trait-value">${traits.baseSpeed.toFixed(2)}</span>
+                    <span class="trait-value">${traits.baseSpeed.toFixed(2)} (gene: ${traits.geneticSpeed.toFixed(2)})</span>
                 </div>
                 <div class="trait-item">
                     <span class="trait-name">Size</span>
@@ -1766,7 +1811,7 @@
                         traits.canEatOxygen ? 'O₂' : '',
                         traits.canEatGlucose ? 'G' : '',
                         traits.canEatAmino ? 'A' : ''
-                    ].filter(x => x).join(' ')}</span>
+                    ].filter(x => x).join(' ')} (${traits.specialistBonus.toFixed(1)}x)</span>
                 </div>
                 <div class="trait-item">
                     <span class="trait-name">Energy</span>
@@ -2384,8 +2429,8 @@
                 return;
             }
             
-            const minSize = 8, maxSize = 25;
-            const minSpeed = 0.2, maxSpeed = 2;
+            const minSize = 5, maxSize = 40;
+            const minSpeed = 0.04, maxSpeed = 4;
             
             // Draw axes
             ctx.strokeStyle = 'rgba(100, 200, 150, 0.3)';
@@ -2435,18 +2480,19 @@
             // Calculate averages
             const avgSize = organisms.reduce((s, o) => s + o.traits.size, 0) / organisms.length;
             const avgSpeed = organisms.reduce((s, o) => s + o.traits.baseSpeed, 0) / organisms.length;
+            const avgGeneticSpeed = organisms.reduce((s, o) => s + o.traits.geneticSpeed, 0) / organisms.length;
             const avgMetabolicRate = organisms.reduce((s, o) => s + o.traits.metabolicRate, 0) / organisms.length;
             const avgSensorRange = organisms.reduce((s, o) => s + o.traits.sensorRange, 0) / organisms.length;
             const avgReproThreshold = organisms.reduce((s, o) => s + o.traits.reproductionThreshold, 0) / organisms.length;
-            const avgMutationTendency = organisms.reduce((s, o) => s + o.traits.mutationTendency, 0) / organisms.length;
+            const avgSpecialistBonus = organisms.reduce((s, o) => s + o.traits.specialistBonus, 0) / organisms.length;
             
             const traits = [
-                { name: 'Size', value: avgSize, min: 8, max: 25, color: '#40c0ff' },
-                { name: 'Speed', value: avgSpeed, min: 0.2, max: 2, color: '#ff9040' },
-                { name: 'Metabolic Rate', value: avgMetabolicRate, min: 0.3, max: 1.2, color: '#ffc040' },
-                { name: 'Sensor Range', value: avgSensorRange, min: 30, max: 120, color: '#c040ff' },
-                { name: 'Repro. Threshold', value: avgReproThreshold, min: 60, max: 150, color: '#ff4080' },
-                { name: 'Mutation Tendency', value: avgMutationTendency, min: 0.01, max: 0.15, color: '#40ffc0' }
+                { name: 'Size', value: avgSize, min: 5, max: 40, color: '#40c0ff' },
+                { name: 'Genetic Speed', value: avgGeneticSpeed, min: 0.1, max: 4.0, color: '#ff9040' },
+                { name: 'Actual Speed', value: avgSpeed, min: 0.04, max: 4.0, color: '#ffb060' },
+                { name: 'Metabolic Rate', value: avgMetabolicRate, min: 0.2, max: 2.0, color: '#ffc040' },
+                { name: 'Sensor Range', value: avgSensorRange, min: 15, max: 250, color: '#c040ff' },
+                { name: 'Specialist Bonus', value: avgSpecialistBonus, min: 1.0, max: 1.8, color: '#40ffc0' }
             ];
             
             let html = '<div class="trait-avg-grid">';
