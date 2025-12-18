@@ -5,7 +5,7 @@
 > *Working title: "Primordial Soup" (potential future rebrand)*
 
 ![Status](https://img.shields.io/badge/status-MVP-green)
-![Version](https://img.shields.io/badge/version-0.2.0-blue)
+![Version](https://img.shields.io/badge/version-0.2.1-blue)
 
 ## Overview
 
@@ -224,7 +224,18 @@ Penalty = 0.54 (54%)
 Actual speed = 3.0 × 0.54 = 1.62
 ```
 
-### 2. Speed → Energy Cost (×1.5)
+### 2. Movement Type Modifiers
+
+Different movement types have speed and maneuverability trade-offs:
+
+| Type | Speed Modifier | Turn Rate Modifier | Notes |
+|------|----------------|-------------------|-------|
+| **Flagellum** | ×1.1 | ×0.9 | Fast but less maneuverable |
+| **Cilia** | ×1.0 | ×1.0 | Balanced |
+| **Pseudopod** | ×0.7 | ×1.0 | Slow but efficient |
+| **None** | N/A | N/A | Passive drift only |
+
+### 3. Speed → Energy Cost (×1.5)
 
 Fast organisms burn energy 1.5× faster:
 
@@ -234,7 +245,7 @@ Movement energy cost = baseSpeed × 0.012 × 1.5
 
 A speed-4.0 organism burns energy ~3× faster than a speed-1.0 organism.
 
-### 3. Sensor Range → Energy Drain
+### 4. Sensor Range → Energy Drain
 
 Good sensors cost a small amount of energy:
 
@@ -244,7 +255,7 @@ Sensor drain = sensorRange × 0.00004
 
 At max range (250): ~0.01 energy/tick (small but adds up)
 
-### 4. Specialist Bonus
+### 5. Specialist Bonus
 
 Organisms that can eat fewer food types are MORE efficient at eating:
 
@@ -536,6 +547,10 @@ life-of-game.html
 ---
 
 ## Changelog
+
+### v0.2.1 - Movement Balance
+- **Flagellum nerf**: Speed modifier reduced from ×1.3 to ×1.1, turn rate reduced to ×0.9
+- **Movement type modifiers**: Documented speed and turn rate modifiers for all movement types
 
 ### v0.2.0 - Evolution Update
 - **Trade-offs system**: Size→speed penalty, speed energy cost ×1.5, sensor drain, specialist bonus
