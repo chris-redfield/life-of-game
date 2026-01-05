@@ -1282,7 +1282,7 @@
             }
 
             draw(ctx) {
-                const pulse = Math.sin(this.pulsePhase) * 0.1 + 1;
+                const pulse = Math.sin(this.pulsePhase) * 0.03 + 1;
                 const drawSize = this.size * pulse;
                 const color = this.traits.color;
                 
@@ -2384,7 +2384,7 @@
 
             const color = org.traits.color;
             const drawSize = Math.min(18, org.size * 0.6);
-            const pulse = Math.sin(org.pulsePhase) * 0.1 + 1;
+            const pulse = Math.sin(org.pulsePhase) * 0.03 + 1;
             const size = drawSize * pulse;
 
             // Glow effect
