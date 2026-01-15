@@ -432,6 +432,27 @@
             text-shadow: 0 0 20px rgba(64, 224, 160, 0.5);
         }
 
+        .stats-header-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .download-csv {
+            background: rgba(100, 200, 150, 0.2);
+            border: 1px solid rgba(100, 200, 150, 0.4);
+            color: #60c090;
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .download-csv:hover {
+            background: rgba(100, 200, 150, 0.3);
+        }
+
         .close-stats {
             background: rgba(255, 100, 100, 0.2);
             border: 1px solid rgba(255, 100, 100, 0.4);
@@ -705,7 +726,10 @@
             <div class="stats-overlay" id="statsOverlay">
                 <div class="stats-header">
                     <h2 class="stats-title">📊 Statistics Report</h2>
-                    <button class="close-stats" id="closeStats">← Return to Simulation</button>
+                    <div class="stats-header-buttons">
+                        <button class="download-csv" id="downloadCsv">Download CSV</button>
+                        <button class="close-stats" id="closeStats">← Return to Simulation</button>
+                    </div>
                 </div>
                 
                 <div class="summary-stats">
@@ -1513,9 +1537,8 @@
                 avgSize: []
             },
             lastHistoryTime: 0,
-            // Archive of dead organisms for analysis
-            deadArchive: [],
-            maxArchiveSize: 100
+            // Archive of dead organisms for analysis (unlimited for historical tracking)
+            deadArchive: []
         };
 
         let settings = {
@@ -1642,11 +1665,6 @@
                     traits: { ...org.traits },
                     color: { ...org.traits.color }
                 });
-                
-                // Keep archive manageable
-                if (stats.deadArchive.length > stats.maxArchiveSize) {
-                    stats.deadArchive.shift();
-                }
             });
             
             // Remove dead, add new
@@ -2018,6 +2036,88 @@
             showingStats = false;
             document.getElementById('statsOverlay').classList.remove('active');
         });
+
+        document.getElementById('downloadCsv').addEventListener('click', downloadHistoricalCSV);
+
+        function downloadHistoricalCSV() {
+            // Combine living and dead organisms
+            const allOrganisms = [
+                ...stats.deadArchive.map(o => ({ ...o, alive: false })),
+                ...organisms.map(o => ({
+                    id: o.id,
+                    age: o.age,
+                    generation: o.generation,
+                    offspringCount: o.offspringCount,
+                    foodEaten: o.foodEaten,
+                    maxEnergy: o.maxEnergy,
+                    traits: { ...o.traits },
+                    color: { ...o.traits.color },
+                    alive: true
+                }))
+            ];
+
+            if (allOrganisms.length === 0) {
+                alert('No organism data to export yet.');
+                return;
+            }
+
+            // CSV header
+            const headers = [
+                'id', 'alive', 'age_ticks', 'age_seconds', 'generation', 'offspring_count',
+                'food_eaten', 'max_energy', 'size', 'genetic_speed', 'base_speed',
+                'turn_rate', 'movement_efficiency', 'movement_type', 'metabolic_rate',
+                'sensor_range', 'reproduction_threshold', 'offspring_energy',
+                'mutation_tendency', 'specialist_bonus', 'diet_oxygen', 'diet_glucose',
+                'diet_amino', 'color_r', 'color_g', 'color_b'
+            ];
+
+            // CSV rows
+            const rows = allOrganisms.map(org => [
+                org.id,
+                org.alive,
+                org.age.toFixed(2),
+                (org.age / 60).toFixed(2),
+                org.generation,
+                org.offspringCount,
+                org.foodEaten,
+                org.maxEnergy.toFixed(2),
+                org.traits.size.toFixed(2),
+                org.traits.geneticSpeed.toFixed(4),
+                org.traits.baseSpeed.toFixed(4),
+                org.traits.turnRate.toFixed(4),
+                org.traits.movementEfficiency.toFixed(4),
+                org.traits.movementType,
+                org.traits.metabolicRate.toFixed(4),
+                org.traits.sensorRange.toFixed(2),
+                org.traits.reproductionThreshold.toFixed(2),
+                org.traits.offspringEnergy.toFixed(4),
+                org.traits.mutationTendency.toFixed(4),
+                org.traits.specialistBonus.toFixed(4),
+                org.traits.canEatOxygen,
+                org.traits.canEatGlucose,
+                org.traits.canEatAmino,
+                org.color.r,
+                org.color.g,
+                org.color.b
+            ]);
+
+            // Build CSV content
+            const csvContent = [
+                headers.join(','),
+                ...rows.map(row => row.join(','))
+            ].join('\n');
+
+            // Create and download file
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.setAttribute('href', url);
+            link.setAttribute('download', `organism_history_${Date.now()}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+        }
 
         // ============================================
         // STATS OVERLAY RENDERING
@@ -2606,27 +2706,33 @@
         function renderSizeSpeedChart() {
             const canvas = document.getElementById('sizeSpeedChart');
             const ctx = canvas.getContext('2d');
-            
+
             canvas.width = canvas.parentElement.clientWidth - 20;
             canvas.height = canvas.parentElement.clientHeight - 20;
-            
+
             const w = canvas.width;
             const h = canvas.height;
             const padding = 40;
-            
+
             ctx.clearRect(0, 0, w, h);
-            
-            if (organisms.length === 0) {
+
+            // Combine living and dead organisms
+            const allOrganisms = [
+                ...stats.deadArchive.map(o => ({ traits: o.traits, color: o.color, alive: false })),
+                ...organisms.map(o => ({ traits: o.traits, color: o.traits.color, alive: true }))
+            ];
+
+            if (allOrganisms.length === 0) {
                 ctx.fillStyle = 'rgba(192, 224, 208, 0.5)';
                 ctx.font = '14px Rajdhani';
                 ctx.textAlign = 'center';
-                ctx.fillText('No organisms alive', w / 2, h / 2);
+                ctx.fillText('No organism data yet', w / 2, h / 2);
                 return;
             }
-            
+
             const minSize = 5, maxSize = 40;
             const minSpeed = 0.04, maxSpeed = 4;
-            
+
             // Draw axes
             ctx.strokeStyle = 'rgba(100, 200, 150, 0.3)';
             ctx.lineWidth = 1;
@@ -2635,33 +2741,61 @@
             ctx.lineTo(padding, h - padding);
             ctx.lineTo(w - padding, h - padding);
             ctx.stroke();
-            
+
             // Axis labels
             ctx.fillStyle = 'rgba(192, 224, 208, 0.6)';
             ctx.font = '10px Rajdhani';
             ctx.textAlign = 'center';
             ctx.fillText('Size →', w / 2, h - 5);
-            
+
             ctx.save();
             ctx.translate(10, h / 2);
             ctx.rotate(-Math.PI / 2);
             ctx.fillText('Speed →', 0, 0);
             ctx.restore();
-            
-            // Plot organisms
-            organisms.forEach(org => {
+
+            // Plot organisms (dead first, then alive on top)
+            allOrganisms.forEach(org => {
                 const x = padding + ((org.traits.size - minSize) / (maxSize - minSize)) * (w - 2 * padding);
                 const y = h - padding - ((org.traits.baseSpeed - minSpeed) / (maxSpeed - minSpeed)) * (h - 2 * padding);
-                
+
                 // Draw point with organism's color
                 ctx.beginPath();
-                ctx.arc(x, y, 5, 0, Math.PI * 2);
-                ctx.fillStyle = `rgba(${org.traits.color.r}, ${org.traits.color.g}, ${org.traits.color.b}, 0.7)`;
-                ctx.fill();
-                ctx.strokeStyle = `rgba(${org.traits.color.r}, ${org.traits.color.g}, ${org.traits.color.b}, 1)`;
-                ctx.lineWidth = 1;
-                ctx.stroke();
+                ctx.arc(x, y, org.alive ? 5 : 3, 0, Math.PI * 2);
+
+                if (org.alive) {
+                    // Living organisms: solid with full opacity
+                    ctx.fillStyle = `rgba(${org.color.r}, ${org.color.g}, ${org.color.b}, 0.7)`;
+                    ctx.fill();
+                    ctx.strokeStyle = `rgba(${org.color.r}, ${org.color.g}, ${org.color.b}, 1)`;
+                    ctx.lineWidth = 1;
+                    ctx.stroke();
+                } else {
+                    // Dead organisms: smaller, more transparent
+                    ctx.fillStyle = `rgba(${org.color.r}, ${org.color.g}, ${org.color.b}, 0.25)`;
+                    ctx.fill();
+                }
             });
+
+            // Legend
+            ctx.font = '9px Rajdhani';
+            ctx.textAlign = 'left';
+            ctx.fillStyle = 'rgba(192, 224, 208, 0.8)';
+            ctx.beginPath();
+            ctx.arc(w - 70, 15, 5, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(100, 200, 150, 0.7)';
+            ctx.fill();
+            ctx.strokeStyle = 'rgba(100, 200, 150, 1)';
+            ctx.stroke();
+            ctx.fillStyle = 'rgba(192, 224, 208, 0.8)';
+            ctx.fillText('Alive', w - 60, 18);
+
+            ctx.beginPath();
+            ctx.arc(w - 70, 28, 3, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(100, 200, 150, 0.25)';
+            ctx.fill();
+            ctx.fillStyle = 'rgba(192, 224, 208, 0.8)';
+            ctx.fillText('Dead', w - 60, 31);
         }
 
         function renderTraitAverages() {
