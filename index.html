@@ -583,6 +583,15 @@
             text-align: center;
         }
 
+        .survivor-card.dead {
+            opacity: 0.7;
+            border: 1px solid rgba(128, 128, 128, 0.3);
+        }
+
+        .survivor-card.dead .survivor-rank {
+            color: #888;
+        }
+
         .survivor-rank {
             font-family: 'Orbitron', sans-serif;
             font-size: 14px;
@@ -2441,22 +2450,30 @@
                 `).join('');
             }
 
-            // Top 5 Survivors (alive organisms with longest survival time)
-            const survivors = organisms
-                .filter(o => !o.dead)
-                .sort((a, b) => b.age - a.age)
-                .slice(0, 5);
+            // Top 5 Survivors (all organisms ranked by survival time, alive or dead)
+            const allSurvivors = [
+                ...organisms.filter(o => !o.dead).map(o => ({ ...o, alive: true })),
+                ...stats.deadArchive.map(o => ({
+                    ...o,
+                    alive: false,
+                    // Provide defaults for rendering
+                    size: 15,
+                    pulsePhase: 0,
+                    vx: 1,
+                    vy: 0
+                }))
+            ].sort((a, b) => b.age - a.age).slice(0, 5);
 
             const survivorsList = document.getElementById('survivorsList');
-            if (survivors.length === 0) {
-                survivorsList.innerHTML = '<div class="no-data-message" style="grid-column: 1 / -1;">No living organisms</div>';
+            if (allSurvivors.length === 0) {
+                survivorsList.innerHTML = '<div class="no-data-message" style="grid-column: 1 / -1;">No organisms yet</div>';
             } else {
-                survivorsList.innerHTML = survivors.map((org, i) => `
-                    <div class="survivor-card">
+                survivorsList.innerHTML = allSurvivors.map((org, i) => `
+                    <div class="survivor-card${!org.alive ? ' dead' : ''}">
                         <div class="survivor-rank">#${i + 1}</div>
                         <canvas class="organism-preview" id="survivor-canvas-${i}" width="60" height="60"></canvas>
                         <div class="survivor-stats">
-                            <span>${(org.age / 60).toFixed(1)}s alive</span>
+                            <span>${(org.age / 60).toFixed(1)}s ${org.alive ? 'alive' : 'lived'}</span>
                             <span>generation ${org.generation}</span>
                             <span>${org.traits.movementType}</span>
                         </div>
@@ -2464,7 +2481,7 @@
                 `).join('');
 
                 // Render organism previews into canvases
-                survivors.forEach((org, i) => {
+                allSurvivors.forEach((org, i) => {
                     const canvas = document.getElementById(`survivor-canvas-${i}`);
                     if (canvas) {
                         renderOrganismPreview(canvas, org);
